@@ -1,19 +1,17 @@
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any
-from openai import AzureOpenAI
 
 def get_azure_openai_client(model_type="4o"):
-    """Initialize Azure OpenAI client for GPT-4o model"""
+    """Get Azure OpenAI client from commonconst with safe fallback"""
     try:
-        client = AzureOpenAI(
-            api_key=st.secrets["AZURE_OPENAI_4O_API_KEY"],
-            api_version=st.secrets["AZURE_OPENAI_4O_API_VERSION"],
-            azure_endpoint=st.secrets["AZURE_OPENAI_4O_ENDPOINT"]
-        )
-        return client
+        # Import here to avoid circular imports
+        from ..commonconst import client_4o, DEPLOYMENT_4O
+        if client_4o is None:
+            return None
+        return client_4o
     except Exception as e:
-        st.error(f"Error initializing Azure OpenAI GPT-4o client: {e}")
+        st.warning(f"Azure OpenAI GPT-4o client not available: {e}")
         return None
 
 def create_financial_data_summary(df: pd.DataFrame, region: str, theme: str) -> str:
@@ -352,10 +350,16 @@ def get_chatbot_response(
         try:
             client = get_azure_openai_client()
             if client is None:
-                return "❌ **Error:** Could not connect to Azure OpenAI service. Please check the configuration."
+                return "🤖 **AI Chatbot Unavailable:** Azure OpenAI service is currently not configured. Using data analysis only."
+            
+            # Import deployment name from commonconst
+            from ..commonconst import DEPLOYMENT_4O
+            
+            if DEPLOYMENT_4O is None:
+                return "🤖 **AI Chatbot Unavailable:** Azure OpenAI deployment configuration missing. Using data analysis only."
             
             response = client.chat.completions.create(
-                model=st.secrets["AZURE_OPENAI_4O_DEPLOYMENT"],
+                model=DEPLOYMENT_4O,
                 messages=[
                     {
                         "role": "system",

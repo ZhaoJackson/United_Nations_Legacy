@@ -1,19 +1,17 @@
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any
-from openai import AzureOpenAI
 
 def get_azure_openai_client(model_type="o1"):
-    """Initialize Azure OpenAI client for O1 model"""
+    """Get Azure OpenAI client from commonconst with safe fallback"""
     try:
-        client = AzureOpenAI(
-            api_key=st.secrets["AZURE_OPENAI_O1_API_KEY"],
-            api_version=st.secrets["AZURE_OPENAI_O1_API_VERSION"],
-            azure_endpoint=st.secrets["AZURE_OPENAI_O1_ENDPOINT"]
-        )
-        return client
+        # Import here to avoid circular imports
+        from ..commonconst import client_o1, DEPLOYMENT_O1
+        if client_o1 is None:
+            return None
+        return client_o1
     except Exception as e:
-        st.error(f"Error initializing Azure OpenAI O1 client: {e}")
+        st.warning(f"Azure OpenAI O1 client not available: {e}")
         return None
 
 def create_agency_performance_prompt(
@@ -144,12 +142,18 @@ def call_o1_api(prompt: str) -> str:
         client = get_azure_openai_client()
         
         if client is None:
-            return "❌ Unable to connect to Azure OpenAI O1 service. Please check your configuration."
+            return "🤖 Azure OpenAI O1 service is currently unavailable. AI agency performance features require proper configuration."
+        
+        # Import deployment name from commonconst
+        from ..commonconst import DEPLOYMENT_O1
+        
+        if DEPLOYMENT_O1 is None:
+            return "🤖 Azure OpenAI deployment configuration missing. Please check system settings."
         
         start_time = time.time()
         
         response = client.chat.completions.create(
-            model=st.secrets["AZURE_OPENAI_O1_DEPLOYMENT"],
+            model=DEPLOYMENT_O1,
             messages=[
                 {"role": "user", "content": prompt}
             ]
@@ -159,16 +163,15 @@ def call_o1_api(prompt: str) -> str:
         result = response.choices[0].message.content
         
         if elapsed_time > 7:
-            result += f"\n\n*Processing time: {elapsed_time:.1f}s - Consider adjusting filters for faster analysis*"
+            result += f"\n\n*⏱️ Processing time: {elapsed_time:.1f}s - Consider adjusting filters for faster analysis*"
         else:
-            result += f"\n\n*Analysis completed in {elapsed_time:.1f}s*"
+            result += f"\n\n*⚡ Analysis completed in {elapsed_time:.1f}s*"
         
         return result
         
     except Exception as e:
-        error_msg = f"Error calling O1 API: {str(e)}"
-        st.error(error_msg)
-        return f"❌ {error_msg}"
+        error_msg = f"AI agency performance analysis temporarily unavailable: {str(e)}"
+        return f"🤖 {error_msg}. Please try again later or contact system administrator."
 
 def get_agency_performance_insights(
     analysis_type: str,

@@ -19,8 +19,6 @@ from pathlib import Path
 with open(STYLE_CSS_PATH) as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
-
-
 # ---------- Vertical Color Bar ----------
 st.markdown('<div class="vertical-color-bar"></div>', unsafe_allow_html=True)
 
