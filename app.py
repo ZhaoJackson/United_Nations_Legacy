@@ -1,3 +1,11 @@
+import sys
+import os
+
+# Add the current directory to Python path for Streamlit Cloud deployment
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 from src.commonconst import *
 
 # ---------------- Page Configuration ----------------
