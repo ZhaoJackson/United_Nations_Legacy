@@ -1,5 +1,11 @@
 from src.commonconst import *
-from src.prompt import get_chatbot_response
+from src.prompt.chatbot import get_chatbot_response
+from src.dynamic_analysis import DynamicDataProcessor
+
+# Initialize dynamic data processor
+@st.cache_resource
+def get_dynamic_processor():
+    return DynamicDataProcessor()
 
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:
@@ -62,13 +68,9 @@ st.sidebar.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
-# Get unique values for filters
-if not financial_df.empty:
-    regions = ['All Regions'] + sorted(financial_df['Region'].dropna().unique().tolist())
-    themes = ['All Themes'] + sorted(financial_df['Theme'].dropna().unique().tolist())
-else:
-    regions = ['All Regions']
-    themes = ['All Themes']
+# Get unique values for filters using dynamic functions
+regions = ['All Regions'] + get_region_list()
+themes = ['All Themes'] + get_theme_list()
 
 # Filter controls
 selected_region = st.sidebar.selectbox(

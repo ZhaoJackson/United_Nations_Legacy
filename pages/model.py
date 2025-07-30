@@ -1,5 +1,11 @@
 from src.commonconst import *
-from src.prompt import get_strategic_insights
+from src.prompt.models import get_strategic_insights
+from src.dynamic_analysis import DynamicDataProcessor
+
+# Initialize dynamic data processor
+@st.cache_resource
+def get_dynamic_processor():
+    return DynamicDataProcessor()
 
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:

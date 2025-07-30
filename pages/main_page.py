@@ -1,4 +1,11 @@
 from src.commonconst import *
+from src.dynamic_analysis import DynamicDataProcessor
+from src.prompt.dashboard import get_dashboard_insights
+
+# Initialize dynamic data processor
+@st.cache_resource
+def get_dynamic_processor():
+    return DynamicDataProcessor()
 
 # ---------- Helper Functions ----------
 def get_iso_alpha(country_name):
@@ -736,13 +743,68 @@ st.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
+
+
+# ---------- AI Strategic Intelligence Section ----------
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# Full-width container for AI analysis
+st.markdown("## AI Strategic Intelligence")
+st.markdown("Get data-driven insights and strategic recommendations based on your current filter selections.")
+
+if st.button("Generate AI Analysis", use_container_width=True, type="primary"):
+    with st.spinner("Analyzing data..."):
+        # Prepare current filter context
+        current_filters = {
+            'region': selected_region,
+            'theme': selected_theme,
+            'year': str(selected_year)
+        }
+        
+        # Prepare data context
+        filtered_data = financial_df.copy()
+        if selected_region != "All Regions":
+            filtered_data = filtered_data[filtered_data['Region'] == selected_region]
+        if selected_theme != "All Themes":
+            filtered_data = filtered_data[filtered_data['Theme'] == selected_theme]
+        
+        # Calculate summary metrics
+        total_required = filtered_data['Total required resources'].sum() if 'Total required resources' in filtered_data.columns else 0
+        total_available = filtered_data['Total available resources'].sum() if 'Total available resources' in filtered_data.columns else 0
+        funding_gap = total_required - total_available
+        coverage_ratio = (total_available / total_required * 100) if total_required > 0 else 0
+        
+        # Prepare concise data context for O1
+        data_context = {
+            'financial_summary': f"Projects: {len(filtered_data)}, Required: ${total_required:,.0f}, Available: ${total_available:,.0f}, Gap: ${funding_gap:,.0f} ({coverage_ratio:.1f}% coverage)"
+        }
+        
+        # Get O1 insights
+        insights = get_dashboard_insights("financial", current_filters, data_context)
+        
+        # Display results in full-width format without icons
+        st.markdown("### Strategic Intelligence Report")
+        
+        # Process text for clean display
+        clean_insights = insights.replace('*⚡', 'Analysis completed in').replace('*⏱️', 'Processing time:')
+        clean_insights = clean_insights.replace('**', '__')  # Convert ** to __ for markdown bold
+        clean_insights = clean_insights.replace('\n', '<br>').replace('• ', '&nbsp;&nbsp;• ')
+        
+        st.markdown(f"""
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 8px; margin: 1rem 0;">
+            <div style="color: #334155; line-height: 1.8; font-size: 1rem; max-width: none;">
+                {clean_insights}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 # ---------- Enhanced Footer ----------
 st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
 st.markdown(
     """
     <div style='text-align: center; color: #64748b; padding: 2rem; background: linear-gradient(135deg, rgba(0,158,219,0.05) 0%, rgba(0,107,182,0.02) 100%); border-radius: 15px; margin: 1rem 0;'>
         <p style='font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;'>
-            🇺🇳 <strong>United Nations Joint Work Plan Dashboard</strong>
+            <strong>United Nations Joint Work Plan Dashboard</strong>
         </p>
         <p style='margin: 0.5rem 0; color: #475569;'>
             Advancing Sustainable Development Goals | Data-driven insights for global development

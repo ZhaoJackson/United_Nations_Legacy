@@ -158,15 +158,74 @@ QUICK_QUESTIONS = [
     "What are the latest funding trends?"
 ]
 
-# Load Data
-financial_df = pd.read_csv(FINANCIAL_PATH)
-un_agencies_df = pd.read_csv(UN_AGENCIES_PATH)
-sdg_goals_df = pd.read_csv(SDG_GOALS_PATH)
+# Dynamic Data Discovery Functions
+def discover_available_themes_from_filesystem():
+    """Discover all available themes from the regional data directories"""
+    themes_set = set()
+    data_dir = Path("src/data")
+    
+    if data_dir.exists():
+        for region_dir in data_dir.iterdir():
+            if region_dir.is_dir() and not region_dir.name.startswith('.'):
+                for theme_file in region_dir.iterdir():
+                    if theme_file.suffix == '.xlsx' and not theme_file.name.startswith('.'):
+                        theme_name = theme_file.stem
+                        themes_set.add(theme_name)
+    
+    return sorted(list(themes_set))
 
-# Load Model Outputs
-funding_prediction_df = pd.read_csv(FUNDING_PREDICTION_PATH)
-anomaly_detection_df = pd.read_csv(ANOMALY_DETECTION_PATH)
-un_agency_performance_df = pd.read_csv(UN_AGENCY_PERFORMANCE_PATH)
+def discover_available_regions_from_filesystem():
+    """Discover all available regions from the data directory structure"""
+    regions_set = set()
+    data_dir = Path("src/data")
+    
+    if data_dir.exists():
+        for region_dir in data_dir.iterdir():
+            if region_dir.is_dir() and not region_dir.name.startswith('.'):
+                regions_set.add(region_dir.name)
+    
+    return sorted(list(regions_set))
+
+def get_theme_file_mapping():
+    """Create a mapping of themes to their file paths across regions"""
+    theme_mapping = {}
+    data_dir = Path("src/data")
+    
+    if data_dir.exists():
+        for region_dir in data_dir.iterdir():
+            if region_dir.is_dir() and not region_dir.name.startswith('.'):
+                region_name = region_dir.name
+                for theme_file in region_dir.iterdir():
+                    if theme_file.suffix == '.xlsx' and not theme_file.name.startswith('.'):
+                        theme_name = theme_file.stem
+                        if theme_name not in theme_mapping:
+                            theme_mapping[theme_name] = {}
+                        theme_mapping[theme_name][region_name] = str(theme_file)
+    
+    return theme_mapping
+
+# Safe data loading with error handling
+def safe_load_csv(file_path, default_df=None):
+    """Safely load CSV files with error handling"""
+    try:
+        if Path(file_path).exists():
+            return pd.read_csv(file_path)
+        else:
+            st.warning(f"Data file not found: {file_path}. Using empty DataFrame.")
+            return default_df if default_df is not None else pd.DataFrame()
+    except Exception as e:
+        st.error(f"Error loading {file_path}: {e}")
+        return default_df if default_df is not None else pd.DataFrame()
+
+# Load Data with error handling
+financial_df = safe_load_csv(FINANCIAL_PATH)
+un_agencies_df = safe_load_csv(UN_AGENCIES_PATH)
+sdg_goals_df = safe_load_csv(SDG_GOALS_PATH)
+
+# Load Model Outputs with error handling
+funding_prediction_df = safe_load_csv(FUNDING_PREDICTION_PATH)
+anomaly_detection_df = safe_load_csv(ANOMALY_DETECTION_PATH)
+un_agency_performance_df = safe_load_csv(UN_AGENCY_PERFORMANCE_PATH)
 
 # Funding Gap Calculation
 for year in range(2020, 2027):
@@ -186,10 +245,74 @@ def get_country_list():
     return sorted(financial_df["Country"].dropna().unique())
 
 def get_theme_list():
-    return sorted(financial_df["Theme"].dropna().unique())
+    """Get comprehensive theme list from both data files and filesystem"""
+    themes_from_data = set()
+    themes_from_filesystem = set(discover_available_themes_from_filesystem())
+    
+    # Get themes from financial data if available
+    if not financial_df.empty and "Theme" in financial_df.columns:
+        themes_from_data = set(financial_df["Theme"].dropna().unique())
+    
+    # Combine both sources
+    all_themes = themes_from_data.union(themes_from_filesystem)
+    return sorted(list(all_themes))
 
 def get_region_list():
-    return sorted(financial_df["Region"].dropna().unique())
+    """Get comprehensive region list from both data files and filesystem"""
+    regions_from_data = set()
+    regions_from_filesystem = set(discover_available_regions_from_filesystem())
+    
+    # Get regions from financial data if available
+    if not financial_df.empty and "Region" in financial_df.columns:
+        regions_from_data = set(financial_df["Region"].dropna().unique())
+    
+    # Combine both sources
+    all_regions = regions_from_data.union(regions_from_filesystem)
+    return sorted(list(all_regions))
+
+def get_available_themes_for_region(region):
+    """Get available themes for a specific region"""
+    theme_mapping = get_theme_file_mapping()
+    available_themes = []
+    
+    for theme, regions in theme_mapping.items():
+        if region in regions:
+            available_themes.append(theme)
+    
+    return sorted(available_themes)
+
+def check_data_completeness():
+    """Check which themes and regions have complete data coverage"""
+    theme_mapping = get_theme_file_mapping()
+    all_regions = get_region_list()
+    all_themes = get_theme_list()
+    
+    completeness_report = {
+        'complete_themes': [],
+        'partial_themes': [],
+        'missing_themes': [],
+        'total_files': 0,
+        'missing_files': 0
+    }
+    
+    for theme in all_themes:
+        if theme in theme_mapping:
+            regions_with_theme = set(theme_mapping[theme].keys())
+            all_regions_set = set(all_regions)
+            
+            if regions_with_theme == all_regions_set:
+                completeness_report['complete_themes'].append(theme)
+            elif regions_with_theme:
+                completeness_report['partial_themes'].append(theme)
+            else:
+                completeness_report['missing_themes'].append(theme)
+                
+            completeness_report['total_files'] += len(regions_with_theme)
+            completeness_report['missing_files'] += len(all_regions_set - regions_with_theme)
+        else:
+            completeness_report['missing_themes'].append(theme)
+    
+    return completeness_report
 
 def get_agencies_list():
     """Extract unique UN agencies from the financial data"""
@@ -330,7 +453,11 @@ def load_sdg_model():
     """Load the saved SDG prediction model"""
     import joblib
     try:
-        return joblib.load(SDG_MODEL_PATH)
+        if Path(SDG_MODEL_PATH).exists():
+            return joblib.load(SDG_MODEL_PATH)
+        else:
+            st.warning(f"SDG model not found at {SDG_MODEL_PATH}. Please retrain the model.")
+            return None
     except Exception as e:
         st.error(f"Error loading SDG model: {e}")
         return None
@@ -340,10 +467,130 @@ def load_agency_model():
     """Load the saved Agency prediction model"""
     import joblib
     try:
-        return joblib.load(AGENCY_MODEL_PATH)
+        if Path(AGENCY_MODEL_PATH).exists():
+            return joblib.load(AGENCY_MODEL_PATH)
+        else:
+            st.warning(f"Agency model not found at {AGENCY_MODEL_PATH}. Please retrain the model.")
+            return None
     except Exception as e:
         st.error(f"Error loading Agency model: {e}")
         return None
+
+@st.cache_data(ttl=3600)  # Cache for 1 hour
+def refresh_data():
+    """Refresh all data sources and return updated dataframes"""
+    global financial_df, un_agencies_df, sdg_goals_df
+    global funding_prediction_df, anomaly_detection_df, un_agency_performance_df
+    
+    # Reload main datasets
+    financial_df = safe_load_csv(FINANCIAL_PATH)
+    un_agencies_df = safe_load_csv(UN_AGENCIES_PATH)
+    sdg_goals_df = safe_load_csv(SDG_GOALS_PATH)
+    
+    # Reload model outputs
+    funding_prediction_df = safe_load_csv(FUNDING_PREDICTION_PATH)
+    anomaly_detection_df = safe_load_csv(ANOMALY_DETECTION_PATH)
+    un_agency_performance_df = safe_load_csv(UN_AGENCY_PERFORMANCE_PATH)
+    
+    # Recalculate funding gaps
+    for year in range(2020, 2027):
+        req_col = f"{year} Required"
+        avail_col = f"{year} Available"
+        if req_col in financial_df.columns and avail_col in financial_df.columns:
+            financial_df[f"{year} Gap"] = financial_df[req_col] - financial_df[avail_col]
+    
+    return {
+        'financial_df': financial_df,
+        'un_agencies_df': un_agencies_df,
+        'sdg_goals_df': sdg_goals_df,
+        'funding_prediction_df': funding_prediction_df,
+        'anomaly_detection_df': anomaly_detection_df,
+        'un_agency_performance_df': un_agency_performance_df
+    }
+
+def force_refresh_cache():
+    """Force refresh all cached data and models"""
+    refresh_data.clear()
+    load_sdg_model.clear()
+    load_agency_model.clear()
+    st.success("Cache cleared! Data and models will be reloaded.")
+
+def get_model_status():
+    """Check status of all models and data files"""
+    status = {
+        'models': {
+            'sdg_model': Path(SDG_MODEL_PATH).exists(),
+            'agency_model': Path(AGENCY_MODEL_PATH).exists()
+        },
+        'data_files': {
+            'financial_data': Path(FINANCIAL_PATH).exists(),
+            'un_agencies_data': Path(UN_AGENCIES_PATH).exists(),
+            'sdg_goals_data': Path(SDG_GOALS_PATH).exists(),
+            'funding_predictions': Path(FUNDING_PREDICTION_PATH).exists(),
+            'anomaly_detection': Path(ANOMALY_DETECTION_PATH).exists(),
+            'agency_performance': Path(UN_AGENCY_PERFORMANCE_PATH).exists()
+        },
+        'themes_available': len(get_theme_list()),
+        'regions_available': len(get_region_list()),
+        'data_completeness': check_data_completeness()
+    }
+    return status
+
+def check_system_updates_needed():
+    """Check if the system needs updates due to new themes or data changes"""
+    try:
+        from src.dynamic_analysis import DynamicDataProcessor, DynamicModelManager
+        
+        # Initialize processors
+        data_processor = DynamicDataProcessor()
+        model_manager = DynamicModelManager()
+        
+        # Discover current data structure
+        structure = data_processor.discover_data_structure()
+        themes = structure['themes']
+        
+        # Check if models need retraining
+        needs_retraining = model_manager.needs_retraining(themes)
+        
+        # Check data completeness
+        completeness = check_data_completeness()
+        has_incomplete_data = len(completeness['partial_themes']) > 0 or len(completeness['missing_themes']) > 0
+        
+        return {
+            'needs_update': needs_retraining or has_incomplete_data,
+            'needs_retraining': needs_retraining,
+            'has_incomplete_data': has_incomplete_data,
+            'themes_found': themes,
+            'completeness_report': completeness
+        }
+    except Exception as e:
+        return {
+            'needs_update': False,
+            'error': str(e)
+        }
+
+def auto_adapt_to_new_themes():
+    """Automatically adapt the system when new themes are detected"""
+    try:
+        from src.dynamic_analysis import auto_update_analysis
+        
+        # Run the automatic update analysis
+        results = auto_update_analysis()
+        
+        # Return results for display
+        return {
+            'success': True,
+            'themes_found': results['themes_found'],
+            'regions_found': results['regions_found'],
+            'processing_time': results['processing_time'],
+            'models_need_retraining': results['models_need_retraining'],
+            'dashboard_status': results['dashboard_status']
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 def get_model_countries():
     """Get countries available for model prediction"""
@@ -442,10 +689,10 @@ def predict_agencies(model, country, theme, strategic_priority_code):
 def get_historical_context(country, theme, strategic_priority_code):
     """Get historical context from the datasets for predictions"""
     try:
-        # Load the datasets
-        funding_df = pd.read_csv("src/outputs/model_output/funding_prediction.csv")
-        anomaly_df = pd.read_csv("src/outputs/model_output/anomaly_detection.csv")
-        agency_df = pd.read_csv("src/outputs/model_output/un_agency.csv")
+        # Load the datasets using path constants
+        funding_df = pd.read_csv(FUNDING_PREDICTION_PATH)
+        anomaly_df = pd.read_csv(ANOMALY_DETECTION_PATH)
+        agency_df = pd.read_csv(UN_AGENCY_PERFORMANCE_PATH)
         
         # Filter for the specific inputs
         context = {}

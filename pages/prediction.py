@@ -1,4 +1,8 @@
 from src.commonconst import *
+from src.prompt.funding_prediction import get_funding_prediction_insights
+from src.prompt.anomaly_detection import get_anomaly_detection_insights
+from src.prompt.agency_performance import get_agency_performance_insights
+from pathlib import Path
 
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:
@@ -1179,12 +1183,63 @@ st.markdown('''
 </div>
 ''', unsafe_allow_html=True)
 
+
+
+# ---------- AI Predictive Intelligence Section ----------
+st.markdown("---")
+
+# Full-width container for AI analysis  
+st.markdown("## AI Predictive Intelligence")
+st.markdown("Get model-driven insights and forecasting analysis based on the current prediction outputs.")
+
+if st.button("Generate Predictive Analysis", use_container_width=True, type="primary"):
+    with st.spinner("Analyzing prediction models..."):
+        # Prepare prediction data context
+        try:
+            # Load model output data
+            funding_pred_data = pd.read_csv("src/outputs/model_output/funding_prediction.csv") if Path("src/outputs/model_output/funding_prediction.csv").exists() else pd.DataFrame()
+            anomaly_data = pd.read_csv("src/outputs/model_output/anomaly_detection.csv") if Path("src/outputs/model_output/anomaly_detection.csv").exists() else pd.DataFrame()
+            agency_data = pd.read_csv("src/outputs/model_output/un_agency.csv") if Path("src/outputs/model_output/un_agency.csv").exists() else pd.DataFrame()
+            
+            # Prepare concise data context for O1
+            data_context = {
+                'prediction_data': f"Funding predictions: {len(funding_pred_data)}, Anomalies: {len(anomaly_data)}, Agency records: {len(agency_data)}",
+                'model_outputs': f"SDG model: {'Available' if Path('src/outputs/model_output/SDG_model.pkl').exists() else 'Missing'}, Agency model: {'Available' if Path('src/outputs/model_output/Agency_model.pkl').exists() else 'Missing'}"
+            }
+            
+        except Exception:
+            # Fallback data context
+            data_context = {
+                'prediction_data': "Model outputs available for analysis",
+                'model_outputs': "Predictive models trained and ready"
+            }
+        
+        # Get O1 insights for prediction analysis
+        insights = get_funding_prediction_insights("prediction", {}, data_context)
+        
+        # Display results in full-width format without icons
+        st.markdown("### Predictive Intelligence Report")
+        
+        # Process text for clean display
+        clean_insights = insights.replace('*⚡', 'Analysis completed in').replace('*⏱️', 'Processing time:')
+        clean_insights = clean_insights.replace('**', '__')  # Convert ** to __ for markdown bold
+        clean_insights = clean_insights.replace('\n', '<br>').replace('• ', '&nbsp;&nbsp;• ')
+        
+        st.markdown(f"""
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 2rem; border-radius: 8px; margin: 1rem 0;">
+            <div style="color: #334155; line-height: 1.8; font-size: 1rem; max-width: none;">
+                {clean_insights}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
 # ---------- Enhanced Footer ----------
+st.markdown("---")
 st.markdown(
     """
     <div class='footer'>
         <p style='font-size: 1.1rem; font-weight: 600; color: #1e293b; margin-bottom: 0.5rem;'>
-            🤖 <strong>UN Advanced Analytics Platform</strong>
+            <strong>UN Advanced Analytics Platform</strong>
         </p>
         <p style='margin: 0.5rem 0; color: #475569;'>
             Interactive Machine Learning Insights | Real-time Analysis | Strategic Decision Support
