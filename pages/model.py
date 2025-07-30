@@ -1,5 +1,12 @@
 from src.commonconst import *
-from src.prompt.models import get_strategic_insights
+
+# Import from the prompt package using the __init__ exports
+try:
+    from src.prompt import get_strategic_insights
+except ImportError:
+    # Fallback for deployment environments
+    def get_strategic_insights(*args, **kwargs):
+        return "Strategic insights temporarily unavailable. Please check system configuration."
 from src.dynamic_analysis import DynamicDataProcessor
 
 # Initialize dynamic data processor
@@ -122,8 +129,12 @@ with col1:
     @st.cache_data
     def load_country_data():
         try:
-            funding_df = pd.read_csv("src/outputs/model_output/funding_prediction.csv")
-            countries = funding_df['Country'].unique()
+            funding_df = safe_load_csv("src/outputs/model_output/funding_prediction.csv")
+            if funding_df.empty:
+                st.warning("⚠️ Funding prediction data not available. Country map may be limited.")
+                return pd.DataFrame({'Country': [], 'ISO3': [], 'Available': []})
+                
+            countries = funding_df['Country'].unique() if 'Country' in funding_df.columns else []
             country_data = []
             for country in countries:
                 try:
@@ -132,7 +143,8 @@ with col1:
                 except:
                     pass
             return pd.DataFrame(country_data)
-        except:
+        except Exception as e:
+            st.warning(f"⚠️ Error loading country data: {e}")
             return pd.DataFrame({'Country': [], 'ISO3': [], 'Available': []})
 
     country_map_data = load_country_data()

@@ -1,7 +1,18 @@
 from src.commonconst import *
-from src.prompt.funding_prediction import get_funding_prediction_insights
-from src.prompt.anomaly_detection import get_anomaly_detection_insights
-from src.prompt.agency_performance import get_agency_performance_insights
+
+# Import from the prompt package using the __init__ exports
+try:
+    from src.prompt import get_funding_prediction_insights, get_anomaly_detection_insights, get_agency_performance_insights
+except ImportError:
+    # Fallback for deployment environments
+    def get_funding_prediction_insights(*args, **kwargs):
+        return "Funding prediction insights temporarily unavailable. Please check system configuration."
+    
+    def get_anomaly_detection_insights(*args, **kwargs):
+        return "Anomaly detection insights temporarily unavailable. Please check system configuration."
+    
+    def get_agency_performance_insights(*args, **kwargs):
+        return "Agency performance insights temporarily unavailable. Please check system configuration."
 from pathlib import Path
 
 # ---------- Enhanced Custom Styles ----------

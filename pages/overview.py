@@ -177,14 +177,17 @@ with tab1:
     
     # ---------- Load and Display Key Platform Statistics ----------
     try:
-        financial_data = pd.read_csv("src/outputs/data_output/Financial_Cleaned.csv")
+        financial_data = safe_load_csv("src/outputs/data_output/Financial_Cleaned.csv")
         
-        total_projects = len(financial_data)
-        total_countries = financial_data['Country'].nunique()
-        total_agencies = len(financial_data['Agencies'].dropna().str.split(';').explode().unique())
-        total_funding = financial_data['Total required resources'].sum()
-        total_regions = financial_data['Region'].nunique()
-        total_themes = financial_data['Theme'].nunique()
+        if not financial_data.empty:
+            total_projects = len(financial_data)
+            total_countries = financial_data['Country'].nunique() if 'Country' in financial_data.columns else 0
+            total_agencies = len(financial_data['Agencies'].dropna().str.split(';').explode().unique()) if 'Agencies' in financial_data.columns else 0
+            total_funding = financial_data['Total required resources'].sum() if 'Total required resources' in financial_data.columns else 0
+            total_regions = financial_data['Region'].nunique() if 'Region' in financial_data.columns else 0
+            total_themes = financial_data['Theme'].nunique() if 'Theme' in financial_data.columns else 0
+        else:
+            total_projects = total_countries = total_agencies = total_funding = total_regions = total_themes = 0
         
     except Exception as e:
         st.error(f"Error loading financial data: {e}")
@@ -703,84 +706,65 @@ with tab2:
 with tab3:
     st.markdown('<div class="tab-content">', unsafe_allow_html=True)
     
-    st.markdown("## 👥 Project Acknowledgments")
+    # Header Section
+    st.markdown("# 👥 Project Acknowledgments")
+    st.markdown("---")
     
+    # UN Platform Title
     st.markdown("""
-    <div class="acknowledgement-card">
-        <h3 style="color: #009edb; margin: 0 0 2rem 0; font-size: 2.2rem; font-weight: 700; text-align: center;">
-            🇺🇳 UN JointWork Plans Intelligence Platform
-        </h3>
-        
-        <div style="text-align: center; margin: 2rem 0;">
-            <p style="color: #64748b; margin: 0; line-height: 1.8; font-size: 1.2rem;">
-                Developed under the <strong style="color: #009edb;">United Nations Development Coordination Office</strong>
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Developer Section
-    st.markdown("""
-    <div class="acknowledgement-card">
-        <h4 style="color: #7c3aed; margin: 0 0 1rem 0; font-size: 1.6rem; font-weight: 600;">
-            👨‍💻 <strong>Lead Developer</strong>
-        </h4>
-        <div style="background: rgba(124,58,237,0.1); border-radius: 10px; padding: 1.5rem; margin: 1rem 0;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div style="width: 60px; height: 60px; background: #7c3aed; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem; font-weight: bold;">
-                    ZZ
-                </div>
-                <div>
-                    <h5 style="color: #7c3aed; margin: 0; font-size: 1.3rem; font-weight: 600;">Zichen Zhao</h5>
-                    <p style="color: #64748b; margin: 0.3rem 0 0 0; font-size: 1rem;">Developer Intern</p>
-                    <p style="color: #7c3aed; margin: 0.3rem 0 0 0; font-size: 0.9rem; font-weight: 500;">📧 zichen.zhao@un.org</p>
-                </div>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Guidance Team Section
-    st.markdown("""
-    <div class="acknowledgement-card">
-        <h4 style="color: #059669; margin: 0 0 1rem 0; font-size: 1.6rem; font-weight: 600;">
-            🎯 <strong>Project Guidance & Supervision</strong>
-        </h4>
-        <p style="color: #64748b; margin: 0 0 1.5rem 0; line-height: 1.6;">
-            This project was developed under the expert guidance and supervision of:
+    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, rgba(0,158,219,0.1), rgba(0,107,182,0.05)); border-radius: 15px; margin: 2rem 0;">
+        <h2 style="color: #009edb; margin: 0; font-size: 2.2rem;">🇺🇳 UN JointWork Plans Intelligence Platform</h2>
+        <p style="color: #64748b; margin: 1rem 0 0 0; font-size: 1.1rem;">
+            Developed under the <strong style="color: #009edb;">United Nations Development Coordination Office</strong>
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Supervisors
+    # Developer Section
+    st.markdown("## 👨‍💻 Lead Developer")
+    
+    dev_col1, dev_col2 = st.columns([1, 4])
+    with dev_col1:
+        st.markdown("""
+        <div style="width: 80px; height: 80px; background: #7c3aed; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; font-weight: bold; margin: 0 auto;">
+            ZZ
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with dev_col2:
+        st.markdown("### Zichen Zhao")
+        st.markdown("**Position:** Developer Intern")
+        st.markdown("**Email:** [zichen.zhao@un.org](mailto:zichen.zhao@un.org)")
+        st.markdown("**Role:** Lead development of the AI-powered analytics platform, implementing machine learning models, data processing pipelines, and interactive user interfaces.")
+    
+    st.markdown("---")
+    
+    # Guidance Team Section
+    st.markdown("## 🎯 Project Guidance & Supervision")
+    st.markdown("This project was developed under the expert guidance and supervision of:")
+    st.markdown("")
+    
+    # Supervisors using simple Streamlit components
     supervisors = [
         {
             "name": "Kirit Patel",
             "email": "patelk@un.org",
-            "role": "Project Supervisor",
-            "color": "#009edb",
-            "initials": "KP"
+            "role": "Project Supervisor"
         },
         {
             "name": "Tala Chammas",
             "email": "tala.chammas@un.org", 
-            "role": "Technical Guidance",
-            "color": "#dc2626",
-            "initials": "TC"
+            "role": "Technical Guidance"
         },
         {
             "name": "Hanna Stenback-Koehler",
             "email": "hanna.stenbackakoehler@un.org",
-            "role": "Strategic Oversight",
-            "color": "#f59e0b",
-            "initials": "HSK"
+            "role": "Strategic Oversight"
         },
         {
             "name": "Muhammad Ahmad",
             "email": "muhammad.ahmad2@un.org",
-            "role": "Data & Analytics Guidance",
-            "color": "#22c55e", 
-            "initials": "MA"
+            "role": "Data & Analytics Guidance"
         }
     ]
     
@@ -788,68 +772,46 @@ with tab3:
     
     for i, supervisor in enumerate(supervisors):
         with supervisor_cols[i % 2]:
-            st.markdown(f"""
-            <div style="background: rgba(255,255,255,0.8); border: 2px solid {supervisor['color']}; border-radius: 15px; padding: 1.5rem; margin: 0.5rem 0;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 50px; height: 50px; background: {supervisor['color']}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold;">
-                        {supervisor['initials']}
-                    </div>
-                    <div>
-                        <h5 style="color: {supervisor['color']}; margin: 0; font-size: 1.1rem; font-weight: 600;">{supervisor['name']}</h5>
-                        <p style="color: #64748b; margin: 0.2rem 0; font-size: 0.9rem;">{supervisor['role']}</p>
-                        <p style="color: {supervisor['color']}; margin: 0.2rem 0 0 0; font-size: 0.8rem; font-weight: 500;">📧 {supervisor['email']}</p>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            with st.container():
+                st.markdown(f"### {supervisor['name']}")
+                st.markdown(f"**Role:** {supervisor['role']}")
+                st.markdown(f"**Email:** [{supervisor['email']}](mailto:{supervisor['email']})")
+                st.markdown("")
     
-    # Organization Section
+    # Organization Section  
     st.markdown("---")
+    st.markdown("## 🏢 United Nations Development Coordination Office")
+    
     st.markdown("""
-    <div class="acknowledgement-card">
-        <h4 style="color: #009edb; margin: 0 0 1rem 0; font-size: 1.6rem; font-weight: 600;">
-            🏢 <strong>United Nations Development Coordination Office</strong>
-        </h4>
-        <p style="color: #64748b; margin: 0 0 1rem 0; line-height: 1.8; font-size: 1.1rem;">
-            The UN Development Coordination Office (DCO) supports the Resident Coordinator system, 
-            which leads United Nations development action at the country level towards achieving the 
-            Sustainable Development Goals.
-        </p>
-        <div style="background: rgba(0,158,219,0.1); border-radius: 10px; padding: 1.5rem; margin: 1rem 0;">
-            <p style="color: #009edb; margin: 0; font-weight: 600; font-size: 1rem; text-align: center;">
-                🌍 <strong>Mission:</strong> Promoting peace, dignity and equality on a healthy planet through coordinated action
-            </p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    The UN Development Coordination Office (DCO) supports the Resident Coordinator system, 
+    which leads United Nations development action at the country level towards achieving the 
+    Sustainable Development Goals.
+    """)
+    
+    st.info("🌍 **Mission:** Promoting peace, dignity and equality on a healthy planet through coordinated action")
     
     # Technology & Innovation Section
+    st.markdown("---")
+    st.markdown("## 🚀 Innovation & Technology")
+    
     st.markdown("""
-    <div class="acknowledgement-card">
-        <h4 style="color: #7c3aed; margin: 0 0 1rem 0; font-size: 1.6rem; font-weight: 600;">
-            🚀 <strong>Innovation & Technology</strong>
-        </h4>
-        <p style="color: #64748b; margin: 0 0 1rem 0; line-height: 1.8;">
-            This platform represents the UN's commitment to leveraging cutting-edge artificial intelligence 
-            and data science technologies to enhance global development coordination and strategic planning.
-        </p>
-        
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
-            <div style="background: rgba(124,58,237,0.1); border-radius: 8px; padding: 1rem; text-align: center;">
-                <h6 style="color: #7c3aed; margin: 0 0 0.5rem 0;">🤖 AI Integration</h6>
-                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">GPT-4o & O1 Models</p>
-            </div>
-            <div style="background: rgba(220,38,38,0.1); border-radius: 8px; padding: 1rem; text-align: center;">
-                <h6 style="color: #dc2626; margin: 0 0 0.5rem 0;">📊 Data Science</h6>
-                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">ML & Analytics</p>
-            </div>
-            <div style="background: rgba(5,150,105,0.1); border-radius: 8px; padding: 1rem; text-align: center;">
-                <h6 style="color: #059669; margin: 0 0 0.5rem 0;">🌐 Global Impact</h6>
-                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">SDG Achievement</p>
-            </div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    This platform represents the UN's commitment to leveraging cutting-edge artificial intelligence 
+    and data science technologies to enhance global development coordination and strategic planning.
+    """)
+    
+    tech_col1, tech_col2, tech_col3 = st.columns(3)
+    
+    with tech_col1:
+        st.markdown("### 🤖 AI Integration")
+        st.markdown("GPT-4o & O1 Models")
+    
+    with tech_col2:
+        st.markdown("### 📊 Data Science") 
+        st.markdown("ML & Analytics")
+    
+    with tech_col3:
+        st.markdown("### 🌐 Global Impact")
+        st.markdown("SDG Achievement")
     
     st.markdown('</div>', unsafe_allow_html=True)
 

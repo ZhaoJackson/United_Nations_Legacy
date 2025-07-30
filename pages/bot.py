@@ -1,5 +1,12 @@
 from src.commonconst import *
-from src.prompt.chatbot import get_chatbot_response
+
+# Import from the prompt package using the __init__ exports
+try:
+    from src.prompt import get_chatbot_response
+except ImportError:
+    # Fallback for deployment environments
+    def get_chatbot_response(*args, **kwargs):
+        return "Chatbot temporarily unavailable. Please check system configuration."
 from src.dynamic_analysis import DynamicDataProcessor
 
 # Initialize dynamic data processor
@@ -41,7 +48,9 @@ st.markdown('''
 def load_financial_data():
     """Load and cache the cleaned financial data"""
     try:
-        df = pd.read_csv("src/outputs/data_output/Financial_Cleaned.csv")
+        df = safe_load_csv("src/outputs/data_output/Financial_Cleaned.csv")
+        if df.empty:
+            st.warning("⚠️ Financial data not available. Chatbot functionality may be limited.")
         return df
     except Exception as e:
         st.error(f"Error loading financial data: {e}")

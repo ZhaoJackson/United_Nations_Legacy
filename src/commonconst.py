@@ -13,20 +13,34 @@ from xgboost import XGBRegressor
 import pycountry
 from pathlib import Path
 
-# Azure OpenAI Credentials
-client_4o = AzureOpenAI(
-    api_key=st.secrets["AZURE_OPENAI_4O_API_KEY"],
-    api_version=st.secrets["AZURE_OPENAI_4O_API_VERSION"],
-    azure_endpoint=st.secrets["AZURE_OPENAI_4O_ENDPOINT"]
-)
-DEPLOYMENT_4O = st.secrets["AZURE_OPENAI_4O_DEPLOYMENT"]
-
-client_o1 = AzureOpenAI(
-    api_key=st.secrets["AZURE_OPENAI_O1_API_KEY"],
-    api_version=st.secrets["AZURE_OPENAI_O1_API_VERSION"],
-    azure_endpoint=st.secrets["AZURE_OPENAI_O1_ENDPOINT"]
-)
-DEPLOYMENT_O1 = st.secrets["AZURE_OPENAI_O1_DEPLOYMENT"]
+# Azure OpenAI Credentials - with fallback for missing secrets
+try:
+    client_4o = AzureOpenAI(
+        api_key=st.secrets["AZURE_OPENAI_4O_API_KEY"],
+        api_version=st.secrets["AZURE_OPENAI_4O_API_VERSION"],
+        azure_endpoint=st.secrets["AZURE_OPENAI_4O_ENDPOINT"]
+    )
+    DEPLOYMENT_4O = st.secrets["AZURE_OPENAI_4O_DEPLOYMENT"]
+    
+    client_o1 = AzureOpenAI(
+        api_key=st.secrets["AZURE_OPENAI_O1_API_KEY"],
+        api_version=st.secrets["AZURE_OPENAI_O1_API_VERSION"],
+        azure_endpoint=st.secrets["AZURE_OPENAI_O1_ENDPOINT"]
+    )
+    DEPLOYMENT_O1 = st.secrets["AZURE_OPENAI_O1_DEPLOYMENT"]
+    
+    # Flag to indicate if AI services are available
+    AI_SERVICES_AVAILABLE = True
+    
+except KeyError as e:
+    st.warning(f"⚠️ AI services not configured: Missing secret {e}. Some features may be limited.")
+    
+    # Create dummy clients to prevent import errors
+    client_4o = None
+    client_o1 = None
+    DEPLOYMENT_4O = "dummy"
+    DEPLOYMENT_O1 = "dummy"
+    AI_SERVICES_AVAILABLE = False
 
 # Directory paths
 FINANCIAL_PATH = "src/outputs/data_output/Financial_Cleaned.csv"
@@ -204,13 +218,28 @@ def get_theme_file_mapping():
     
     return theme_mapping
 
-# Safe data loading with error handling
-def safe_load_csv(file_path, default_df=None):
-    """Safely load CSV files with error handling"""
+# Safe data loading with error handling and fallback data
+def safe_load_csv(file_path, default_df=None, use_fallback=True):
+    """Safely load CSV files with error handling and fallback data"""
     try:
         if Path(file_path).exists():
             return pd.read_csv(file_path)
         else:
+            if use_fallback:
+                # Try to use fallback data for common file types
+                if "Financial_Cleaned.csv" in file_path:
+                    from src.fallback_data import get_fallback_data, create_demo_message
+                    st.info("📋 Using sample financial data for demonstration purposes.")
+                    return get_fallback_data('financial')
+                elif "SDG_Goals_Cleaned.csv" in file_path:
+                    from src.fallback_data import get_fallback_data
+                    st.info("📋 Using sample SDG data for demonstration purposes.")
+                    return get_fallback_data('sdg')
+                elif "UN_Agencies_Cleaned.csv" in file_path:
+                    from src.fallback_data import get_fallback_data
+                    st.info("📋 Using sample agency data for demonstration purposes.")
+                    return get_fallback_data('agency')
+            
             st.warning(f"Data file not found: {file_path}. Using empty DataFrame.")
             return default_df if default_df is not None else pd.DataFrame()
     except Exception as e:
@@ -689,10 +718,10 @@ def predict_agencies(model, country, theme, strategic_priority_code):
 def get_historical_context(country, theme, strategic_priority_code):
     """Get historical context from the datasets for predictions"""
     try:
-        # Load the datasets using path constants
-        funding_df = pd.read_csv(FUNDING_PREDICTION_PATH)
-        anomaly_df = pd.read_csv(ANOMALY_DETECTION_PATH)
-        agency_df = pd.read_csv(UN_AGENCY_PERFORMANCE_PATH)
+        # Load the datasets using path constants with safe loading
+        funding_df = safe_load_csv(FUNDING_PREDICTION_PATH)
+        anomaly_df = safe_load_csv(ANOMALY_DETECTION_PATH)
+        agency_df = safe_load_csv(UN_AGENCY_PERFORMANCE_PATH)
         
         # Filter for the specific inputs
         context = {}
