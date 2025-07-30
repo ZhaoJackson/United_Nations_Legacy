@@ -7,8 +7,14 @@ src/notebooks/SDG_Goals.csv
 src/notebooks/UN_Agencies.csv
 src/data/
 
+# Notebooks directory
+src/notebooks/
+
 # Python
 __pycache__/
+**/__pycache__/
+__init__.py
+**/__init__.py
 *.py[cod]
 *$py.class
 *.so
