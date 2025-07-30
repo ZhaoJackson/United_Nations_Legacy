@@ -117,21 +117,25 @@ with st.sidebar:
     try:
         system_status = check_system_updates_needed()
         
-        # Always show success status (remove warning)
-        st.success("✅ System up to date")
-        
-        # Auto-adaptation button in sidebar (always available)
-        if st.button("🚀 Auto-Adapt System", help="Automatically analyze new themes and update system compatibility", use_container_width=True):
-            with st.spinner("Adapting system..."):
-                adaptation_results = auto_adapt_to_new_themes()
-                
-                if adaptation_results.get('success', False):
-                    st.success("✅ System Adapted!")
-                    st.write(f"Themes: {len(adaptation_results.get('themes_found', []))}")
-                    st.write(f"Regions: {len(adaptation_results.get('regions_found', []))}")
-                    st.write(f"Time: {adaptation_results.get('processing_time', 0):.2f}s")
-                else:
-                    st.error(f"⚠️ Error: {adaptation_results.get('error', 'Unknown error')}")
+        if system_status.get('needs_update', False):
+            st.warning("⚠️ System update needed")
+            st.write(f"Themes: {len(system_status.get('themes_found', []))}")
+            st.write(f"Retraining: {'Yes' if system_status.get('needs_retraining', False) else 'No'}")
+            
+            # Auto-adaptation button in sidebar
+            if st.button("🚀 Auto-Adapt System", help="Automatically analyze new themes and update system compatibility", use_container_width=True):
+                with st.spinner("Adapting system..."):
+                    adaptation_results = auto_adapt_to_new_themes()
+                    
+                    if adaptation_results.get('success', False):
+                        st.success("✅ System Adapted!")
+                        st.write(f"Themes: {len(adaptation_results.get('themes_found', []))}")
+                        st.write(f"Regions: {len(adaptation_results.get('regions_found', []))}")
+                        st.write(f"Time: {adaptation_results.get('processing_time', 0):.2f}s")
+                    else:
+                        st.error(f"⚠️ Error: {adaptation_results.get('error', 'Unknown error')}")
+        else:
+            st.success("✅ System up to date")
             
     except Exception as e:
         st.info(f"ℹ️ System check available")
@@ -701,12 +705,12 @@ with tab3:
     
     st.markdown("## 👥 Project Acknowledgments")
     
-    # Header Section
     st.markdown("""
     <div class="acknowledgement-card">
         <h3 style="color: #009edb; margin: 0 0 2rem 0; font-size: 2.2rem; font-weight: 700; text-align: center;">
             🇺🇳 UN JointWork Plans Intelligence Platform
         </h3>
+        
         <div style="text-align: center; margin: 2rem 0;">
             <p style="color: #64748b; margin: 0; line-height: 1.8; font-size: 1.2rem;">
                 Developed under the <strong style="color: #009edb;">United Nations Development Coordination Office</strong>
@@ -719,7 +723,7 @@ with tab3:
     st.markdown("""
     <div class="acknowledgement-card">
         <h4 style="color: #7c3aed; margin: 0 0 1rem 0; font-size: 1.6rem; font-weight: 600;">
-            👨‍💻 <strong>Intern Lead Developer</strong>
+            👨‍💻 <strong>Lead Developer</strong>
         </h4>
         <div style="background: rgba(124,58,237,0.1); border-radius: 10px; padding: 1.5rem; margin: 1rem 0;">
             <div style="display: flex; align-items: center; gap: 1rem;">
@@ -745,38 +749,59 @@ with tab3:
         <p style="color: #64748b; margin: 0 0 1.5rem 0; line-height: 1.6;">
             This project was developed under the expert guidance and supervision of:
         </p>
+    </div>
     """, unsafe_allow_html=True)
     
-    # Supervisors grid
+    # Supervisors
     supervisors = [
-        ("Kirit Patel", "patelk@un.org", "Project Supervisor", "#009edb", "KP"),
-        ("Tala Chammas", "tala.chammas@un.org", "Project Supervisor", "#dc2626", "TC"),
-        ("Katarina Kuai", "katarina.kuai@un.org", "Project Supervisor", "#7c3aed", "KK"),
-        ("Hanna Stenback-Koehler", "hanna.stenbackakoehler@un.org", "Strategic Oversight", "#f59e0b", "HSK"),
-        ("Muhammad Ahmad", "muhammad.ahmad2@un.org", "Data & Analytics Guidance", "#22c55e", "MA")
+        {
+            "name": "Kirit Patel",
+            "email": "patelk@un.org",
+            "role": "Project Supervisor",
+            "color": "#009edb",
+            "initials": "KP"
+        },
+        {
+            "name": "Tala Chammas",
+            "email": "tala.chammas@un.org", 
+            "role": "Technical Guidance",
+            "color": "#dc2626",
+            "initials": "TC"
+        },
+        {
+            "name": "Hanna Stenback-Koehler",
+            "email": "hanna.stenbackakoehler@un.org",
+            "role": "Strategic Oversight",
+            "color": "#f59e0b",
+            "initials": "HSK"
+        },
+        {
+            "name": "Muhammad Ahmad",
+            "email": "muhammad.ahmad2@un.org",
+            "role": "Data & Analytics Guidance",
+            "color": "#22c55e", 
+            "initials": "MA"
+        }
     ]
     
-    # Create supervisor cards in 2x2 grid
-    col1, col2 = st.columns(2)
+    supervisor_cols = st.columns(2)
     
-    for i, (name, email, role, color, initials) in enumerate(supervisors):
-        with col1 if i % 2 == 0 else col2:
+    for i, supervisor in enumerate(supervisors):
+        with supervisor_cols[i % 2]:
             st.markdown(f"""
-            <div style="background: rgba(255,255,255,0.8); border: 2px solid {color}; border-radius: 15px; padding: 1.5rem; margin: 0.5rem 0;">
+            <div style="background: rgba(255,255,255,0.8); border: 2px solid {supervisor['color']}; border-radius: 15px; padding: 1.5rem; margin: 0.5rem 0;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
-                    <div style="width: 50px; height: 50px; background: {color}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold;">
-                        {initials}
+                    <div style="width: 50px; height: 50px; background: {supervisor['color']}; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; font-weight: bold;">
+                        {supervisor['initials']}
                     </div>
                     <div>
-                        <h5 style="color: {color}; margin: 0; font-size: 1.1rem; font-weight: 600;">{name}</h5>
-                        <p style="color: #64748b; margin: 0.2rem 0; font-size: 0.9rem;">{role}</p>
-                        <p style="color: {color}; margin: 0.2rem 0 0 0; font-size: 0.8rem; font-weight: 500;">📧 {email}</p>
+                        <h5 style="color: {supervisor['color']}; margin: 0; font-size: 1.1rem; font-weight: 600;">{supervisor['name']}</h5>
+                        <p style="color: #64748b; margin: 0.2rem 0; font-size: 0.9rem;">{supervisor['role']}</p>
+                        <p style="color: {supervisor['color']}; margin: 0.2rem 0 0 0; font-size: 0.8rem; font-weight: 500;">📧 {supervisor['email']}</p>
                     </div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
-    
-    st.markdown("</div>", unsafe_allow_html=True)  # Close guidance team card
     
     # Organization Section
     st.markdown("---")
@@ -808,6 +833,7 @@ with tab3:
             This platform represents the UN's commitment to leveraging cutting-edge artificial intelligence 
             and data science technologies to enhance global development coordination and strategic planning.
         </p>
+        
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
             <div style="background: rgba(124,58,237,0.1); border-radius: 8px; padding: 1rem; text-align: center;">
                 <h6 style="color: #7c3aed; margin: 0 0 0.5rem 0;">🤖 AI Integration</h6>
