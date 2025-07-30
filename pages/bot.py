@@ -1,9 +1,6 @@
 from src.commonconst import *
 from src.prompt import get_chatbot_response
 
-# ---------- Must be first Streamlit command ----------
-st.set_page_config(page_title="UN Financial Intelligence Chatbot", **PAGE_CONFIG)
-
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)

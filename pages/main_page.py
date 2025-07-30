@@ -1,8 +1,5 @@
 from src.commonconst import *
 
-# ---------- Must be first Streamlit command ----------
-st.set_page_config(page_title="UN JWP Dashboard", **PAGE_CONFIG)
-
 # ---------- Helper Functions ----------
 def get_iso_alpha(country_name):
     try:

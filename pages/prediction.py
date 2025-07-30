@@ -1,8 +1,5 @@
 from src.commonconst import *
 
-# ---------- Must be first Streamlit command ----------
-st.set_page_config(page_title="UN Model Analysis", **PAGE_CONFIG)
-
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
@@ -966,7 +963,8 @@ with tab3:
                         
                         if avail_col in performance_filtered.columns:
                             yearly_performance = performance_filtered.groupby('Performance_Label').apply(
-                                lambda x: (x[avail_col].sum() / x[year_col].sum()) if x[year_col].sum() > 0 else 0
+                                lambda x: (x[avail_col].sum() / x[year_col].sum()) if x[year_col].sum() > 0 else 0,
+                                include_groups=False
                             ).reset_index()
                             yearly_performance.columns = ['Performance_Label', 'Coverage_Ratio']
                             yearly_performance['Year'] = int(year)
