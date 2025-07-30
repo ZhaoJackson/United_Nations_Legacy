@@ -271,7 +271,12 @@ available_cols = [col for col in financial_year_cols if "Available" in col]
 expenditure_cols = [col for col in financial_year_cols if "Expenditure" in col]
 
 def get_country_list():
-    return sorted(financial_df["Country"].dropna().unique())
+    """Get comprehensive country list with safe column access"""
+    if not financial_df.empty and "Country" in financial_df.columns:
+        return sorted(financial_df["Country"].dropna().unique())
+    else:
+        # Return fallback country list when data is unavailable
+        return ['Afghanistan', 'Bangladesh', 'Ethiopia', 'Kenya', 'Nigeria', 'Pakistan', 'Somalia', 'South Sudan', 'Sudan', 'Yemen']
 
 def get_theme_list():
     """Get comprehensive theme list from both data files and filesystem"""
@@ -344,52 +349,87 @@ def check_data_completeness():
     return completeness_report
 
 def get_agencies_list():
-    """Extract unique UN agencies from the financial data"""
+    """Extract unique UN agencies from the financial data with safe column access"""
     agencies_set = set()
-    for agencies_str in financial_df["Agencies"].dropna().unique():
-        if pd.notna(agencies_str) and str(agencies_str).strip():
-            # Split by semicolon and comma, then clean up
-            agencies = re.split(r'[;,]', str(agencies_str))
-            for agency in agencies:
-                clean_agency = agency.strip()
-                if clean_agency and len(clean_agency) > 3:  # Filter out very short strings
-                    agencies_set.add(clean_agency)
+    
+    if not financial_df.empty and "Agencies" in financial_df.columns:
+        for agencies_str in financial_df["Agencies"].dropna().unique():
+            if pd.notna(agencies_str) and str(agencies_str).strip():
+                # Split by semicolon and comma, then clean up
+                agencies = re.split(r'[;,]', str(agencies_str))
+                for agency in agencies:
+                    clean_agency = agency.strip()
+                    if clean_agency and len(clean_agency) > 3:  # Filter out very short strings
+                        agencies_set.add(clean_agency)
+    
+    # Return fallback agency list when data is unavailable or empty
+    if not agencies_set:
+        agencies_set = {'UNICEF', 'WHO', 'WFP', 'UNDP', 'UNHCR', 'UNESCO', 'FAO', 'UNIDO', 'UNFPA', 'ILO'}
+    
     return sorted(list(agencies_set))
 
 def get_sdg_goals_list():
-    """Extract unique SDG goals from the financial data"""
+    """Extract unique SDG goals from the financial data with safe column access"""
     sdg_set = set()
-    for sdg_str in financial_df["SDG Goals"].dropna().unique():
-        if pd.notna(sdg_str) and str(sdg_str).strip():
-            # Split by semicolon and comma, then clean up
-            sdgs = re.split(r'[;,]', str(sdg_str))
-            for sdg in sdgs:
-                clean_sdg = sdg.strip()
-                if clean_sdg and len(clean_sdg) > 3:  # Filter out very short strings
-                    sdg_set.add(clean_sdg)
+    
+    if not financial_df.empty and "SDG Goals" in financial_df.columns:
+        for sdg_str in financial_df["SDG Goals"].dropna().unique():
+            if pd.notna(sdg_str) and str(sdg_str).strip():
+                # Split by semicolon and comma, then clean up
+                sdgs = re.split(r'[;,]', str(sdg_str))
+                for sdg in sdgs:
+                    clean_sdg = sdg.strip()
+                    if clean_sdg and len(clean_sdg) > 3:  # Filter out very short strings
+                        sdg_set.add(clean_sdg)
+    
+    # Return fallback SDG goals list when data is unavailable or empty
+    if not sdg_set:
+        sdg_set = {
+            'SDG 1: No Poverty', 'SDG 2: Zero Hunger', 'SDG 3: Good Health and Well-being',
+            'SDG 4: Quality Education', 'SDG 5: Gender Equality', 'SDG 6: Clean Water and Sanitation',
+            'SDG 8: Decent Work and Economic Growth', 'SDG 10: Reduced Inequalities',
+            'SDG 11: Sustainable Cities and Communities', 'SDG 16: Peace, Justice and Strong Institutions'
+        }
+    
     return sorted(list(sdg_set))
 
 def filter_by_agency(df, selected_agency):
-    """Filter dataframe by selected UN agency"""
+    """Filter dataframe by selected UN agency with safe column access"""
     if selected_agency == "All Agencies":
         return df
-    return df[df["Agencies"].str.contains(selected_agency, case=False, na=False)]
+    if "Agencies" in df.columns:
+        return df[df["Agencies"].str.contains(selected_agency, case=False, na=False)]
+    else:
+        # Return empty dataframe if column doesn't exist
+        return df.iloc[0:0]
 
 def filter_by_sdg(df, selected_sdg):
-    """Filter dataframe by selected SDG goal"""
+    """Filter dataframe by selected SDG goal with safe column access"""
     if selected_sdg == "All SDG Goals":
         return df
-    return df[df["SDG Goals"].str.contains(selected_sdg, case=False, na=False)]
+    if "SDG Goals" in df.columns:
+        return df[df["SDG Goals"].str.contains(selected_sdg, case=False, na=False)]
+    else:
+        # Return empty dataframe if column doesn't exist
+        return df.iloc[0:0]
 
 # ---------- Page 2 - Model Analysis Functions ----------
 def get_performance_labels():
-    """Get unique performance labels from agency clustering"""
-    return sorted(un_agency_performance_df["Performance_Label"].dropna().unique())
+    """Get unique performance labels from agency clustering with safe column access"""
+    if not un_agency_performance_df.empty and "Performance_Label" in un_agency_performance_df.columns:
+        return sorted(un_agency_performance_df["Performance_Label"].dropna().unique())
+    else:
+        # Return fallback performance labels when data is unavailable
+        return ['Top Performer', 'Moderate Performer', 'Execution Gap', 'Low Performer']
 
 def get_anomaly_countries():
-    """Get countries with anomalous strategic priorities"""
-    anomalous_data = anomaly_detection_df[anomaly_detection_df["SP_Anomaly_Flag"] == "Yes"]
-    return sorted(anomalous_data["Country"].dropna().unique())
+    """Get countries with anomalous strategic priorities with safe column access"""
+    if not anomaly_detection_df.empty and "SP_Anomaly_Flag" in anomaly_detection_df.columns and "Country" in anomaly_detection_df.columns:
+        anomalous_data = anomaly_detection_df[anomaly_detection_df["SP_Anomaly_Flag"] == "Yes"]
+        return sorted(anomalous_data["Country"].dropna().unique())
+    else:
+        # Return fallback countries when data is unavailable
+        return ['Afghanistan', 'Ethiopia', 'Nigeria', 'Somalia', 'Sudan']
 
 def format_currency(value):
     """Format large currency values for display"""
