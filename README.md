@@ -35,10 +35,11 @@ graph TD
 ```
 
 #### **📥 Data Sources**
-- **Raw Regional Data**: [`src/data/`](src/data/) - Regional Excel files by theme (Africa, Asia Pacific, Arab States, Europe & Central Asia, Latin America)
-- **Financial Dataset**: [`src/notebooks/Financial.csv`](src/notebooks/Financial.csv) - Core funding and expenditure data
-- **SDG Mapping**: [`src/notebooks/SDG_Goals.csv`](src/notebooks/SDG_Goals.csv) - Sustainable Development Goals alignment
-- **Agency Data**: [`src/notebooks/UN_Agencies.csv`](src/notebooks/UN_Agencies.csv) - UN agency collaboration metrics
+- **Raw Regional Data**: [`src/data/`](src/data/) - Regional Excel files by theme across 5 regions (Africa, Asia Pacific, Arab States, Europe & Central Asia, Latin America)
+- **Financial Dataset**: [`src/notebooks/Financial.csv`](src/notebooks/) - Core funding and expenditure data (~10.4 MB)
+- **SDG Mapping**: [`src/notebooks/SDG_Goals.csv`](src/notebooks/) - Sustainable Development Goals alignment (~2.3 MB)
+- **Agency Data**: [`src/notebooks/UN_Agencies.csv`](src/notebooks/) - UN agency collaboration metrics (~2.5 MB)
+- **Processed Data**: [`src/outputs/data_output/`](src/outputs/data_output/) - Cleaned datasets (Financial_Cleaned.csv, SDG_Goals_Cleaned.csv, UN_Agencies_Cleaned.csv)
 
 #### **🔧 Data Cleaning & Processing**
 - **Main Processor**: [`src/notebooks/data_cleaning.ipynb`](src/notebooks/data_cleaning.ipynb) - Comprehensive data preprocessing pipeline
@@ -104,10 +105,27 @@ cp .streamlit/secrets.toml.example .streamlit/secrets.toml
 ```
 
 ### **2. Data Setup**
-Ensure you have the required data files (see [`DATA_README.md`](DATA_README.md) for details):
-- Place CSV files in `src/notebooks/`
-- Organize regional Excel files in `src/data/`
-- Run data processing notebooks if needed
+
+#### **📋 Required Data Files**
+Due to file size constraints, the following data files are excluded from version control but are required for the application:
+
+**Core Datasets** (place in `src/notebooks/`):
+- `Financial.csv` (~10.4 MB) - Main financial dataset with funding, expenditure, and gap analysis
+- `SDG_Goals.csv` (~2.3 MB) - Sustainable Development Goals mapping and analysis data  
+- `UN_Agencies.csv` (~2.5 MB) - UN agency collaboration and performance data
+
+**Regional Data** (organize in `src/data/`):
+- `Africa/` - 11 thematic Excel files (crime, digital, education, environment, food, gender, governance, poverty, water, work, youth)
+- `Arab States/` - 11 thematic Excel files
+- `Asia Pacific/` - 11 thematic Excel files
+- `Europe and Central Asia/` - 11 thematic Excel files
+- `Latin America and the Caribbean/` - 11 thematic Excel files
+
+**Generated Outputs** (automatically created):
+- `src/outputs/data_output/` - Cleaned datasets ready for analysis
+- `src/outputs/model_output/` - ML model files and predictions
+
+> 💡 **Data Source**: All data originates from [UN INFO Data Explorer](https://uninfo.org/data-explorer/cooperation-framework/activity-report) - publicly available Cooperation Framework Joint Work Plans
 
 ### **3. Launch Application**
 ```bash
@@ -116,7 +134,9 @@ streamlit run app.py
 
 ### **4. Access Dashboard**
 - **Local**: http://localhost:8501
-- **Web Deployment**: Your Streamlit Cloud URL
+- **Live Demo**: https://united-nations-legacy.streamlit.app/
+
+> 🚀 **Try the Live Demo**: Experience the full dashboard with real UN data at the link above!
 
 ---
 
@@ -165,30 +185,38 @@ streamlit run app.py
 United_Nations_Legacy/
 ├── app.py                          # Main Streamlit application
 ├── requirements.txt                # Python dependencies & deployment config
-├── DATA_README.md                  # Data files documentation
-├── pages/                          # Streamlit pages
-│   ├── overview.py                 # Executive dashboard
-│   ├── main_page.py               # Interactive analysis
-│   ├── prediction.py              # ML model results  
-│   ├── model.py                   # Real-time predictions
-│   ├── bot.py                     # AI chatbot interface
+├── README.md                       # Comprehensive project documentation
+├── LICENSE.md                      # MIT license
+├── .gitignore                      # Version control exclusions
+├── pages/                          # Streamlit dashboard pages
+│   ├── overview.py                 # Executive summary dashboard
+│   ├── main_page.py               # Interactive financial analysis
+│   ├── prediction.py              # ML model results & trends
+│   ├── model.py                   # Real-time predictions interface
+│   ├── bot.py                     # AI chatbot assistant
 │   └── style/
-│       └── style.css              # Custom styling
+│       └── style.css              # Custom UI styling
 ├── src/
-│   ├── commonconst.py             # Configuration and utilities
-│   ├── prompt.py                  # AI prompt engineering
+│   ├── commonconst.py             # Configuration constants & utilities
+│   ├── prompt.py                  # AI prompt engineering & LLM integration
 │   ├── notebooks/                 # Data science workflows
-│   │   ├── data_cleaning.ipynb    # Data preprocessing
-│   │   ├── sdg.ipynb             # SDG prediction model
-│   │   ├── agency.ipynb          # Agency recommendation model  
-│   │   ├── funding.ipynb         # Funding analysis
-│   │   └── anomaly.ipynb         # Anomaly detection
-│   ├── data/                      # Raw regional data (excluded from git)
-│   └── outputs/                   # Processed data and model outputs
-│       ├── data_output/           # Cleaned datasets
-│       └── model_output/          # ML model files and predictions
+│   │   ├── *.csv                  # Core datasets (excluded from git)
+│   │   ├── data_cleaning.ipynb    # Data preprocessing pipeline
+│   │   ├── sdg.ipynb             # SDG prediction model training
+│   │   ├── agency.ipynb          # Agency recommendation model
+│   │   ├── funding.ipynb         # Funding gap analysis
+│   │   └── anomaly.ipynb         # Anomaly detection algorithms
+│   ├── data/                      # Regional Excel files (excluded from git)
+│   │   ├── Africa/               # 11 thematic datasets
+│   │   ├── Arab States/          # 11 thematic datasets
+│   │   ├── Asia Pacific/         # 11 thematic datasets
+│   │   ├── Europe and Central Asia/ # 11 thematic datasets
+│   │   └── Latin America and the Caribbean/ # 11 thematic datasets
+│   └── outputs/                   # Generated analysis results
+│       ├── data_output/           # Cleaned datasets for app
+│       └── model_output/          # Trained ML models & predictions
 └── .streamlit/
-    └── secrets.toml               # API configuration (excluded from git)
+    └── secrets.toml               # API credentials (excluded from git)
 ```
 
 ---
@@ -225,11 +253,45 @@ United_Nations_Legacy/
 5. **Deployment**: Model integration into Streamlit dashboard
 
 ### **☁️ Deployment Options**
-- **Streamlit Cloud**: Automated deployment from GitHub
-- **Local Development**: Run locally with `streamlit run app.py`
-- **Enterprise**: Deploy on UN infrastructure with proper security
 
-> 📋 **For detailed deployment instructions and troubleshooting**: See [`DEPLOYMENT_GUIDE.md`](DEPLOYMENT_GUIDE.md)
+#### **🌐 Streamlit Cloud (Recommended)**
+1. **Connect Repository**: Link your GitHub repository to [Streamlit Cloud](https://share.streamlit.io/)
+2. **Configure Secrets**: Add Azure OpenAI credentials in Streamlit Cloud settings:
+   ```bash
+   AZURE_OPENAI_4O_API_KEY = "your-api-key-here"
+   AZURE_OPENAI_4O_API_VERSION = "2024-02-15-preview"  
+   AZURE_OPENAI_4O_ENDPOINT = "https://your-resource.openai.azure.com/"
+   AZURE_OPENAI_4O_DEPLOYMENT = "your-deployment-name"
+   
+   AZURE_OPENAI_O1_API_KEY = "your-api-key-here"
+   AZURE_OPENAI_O1_API_VERSION = "2024-09-01-preview"
+   AZURE_OPENAI_O1_ENDPOINT = "https://your-resource.openai.azure.com/"
+   AZURE_OPENAI_O1_DEPLOYMENT = "your-deployment-name"
+   ```
+3. **Deploy**: Streamlit Cloud automatically detects `requirements.txt` and deploys
+
+#### **💻 Local Development**
+```bash
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+#### **🐳 Docker Deployment**
+```dockerfile
+FROM python:3.11.9-slim
+RUN apt-get update && apt-get install -y build-essential python3-dev
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY . /app
+WORKDIR /app
+EXPOSE 8501
+CMD ["streamlit", "run", "app.py"]
+```
+
+#### **🆘 Troubleshooting**
+If Streamlit Cloud deployment fails, create these files:
+- `runtime.txt`: `python-3.11.9`
+- `packages.txt`: `build-essential\npython3-dev`
 
 ### **🔒 Security & Privacy**
 - **API Security**: Azure OpenAI credentials via environment variables
@@ -241,9 +303,9 @@ United_Nations_Legacy/
 ## 📞 **Contact & Support**
 
 - **Developer**: Zichen Zhao (Jackson)
-- **Email**: ziche.zhao@un.org  
-- **Organization**: UN Development Coordination Office (UNDCO)
-- **GitHub**: [Repository Issues](https://github.com/your-username/United_Nations_Legacy/issues)
+- **Email**: ziche.zhao@un.org or zichen.zhao@columbia.edu 
+- **Organization**: United Nations Development Coordination Office (UNDCO)
+- **GitHub**: [Repository Issues](https://github.com/ZhaoJackson/United_Nations_Legacy/issues)
 
 ---
 
@@ -256,10 +318,23 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 ## 🙏 **Acknowledgments**
 
 - UN Development Coordination Office (UNDCO)
-- UN Country Teams contributing data
-- Azure AI Foundry for enterprise AI infrastructure
+- UN Country Teams contributing data from https://uninfo.org/data-explorer/cooperation-framework/activity-report
+- Azure AI Foundry for enterprise AI infrastructure 
 - Open source community for tools and libraries
 
 ---
 
-*Built with ❤️ for evidence-based decision-making in UN programming*
+## 🌟 **Mission & Impact**
+
+This dashboard represents a commitment to **data-driven transparency** in UN programming, enabling:
+
+- **Evidence-Based Policy**: Transform complex financial data into actionable insights for strategic decision-making
+- **Resource Optimization**: Identify funding gaps and opportunities for more effective resource allocation  
+- **Cross-Regional Learning**: Facilitate knowledge sharing and best practice identification across UN Country Teams
+- **Accountability & Transparency**: Provide clear visibility into UN JointWork Plans financial performance and outcomes
+
+> **Empowering the UN system with intelligent analytics for more effective development cooperation worldwide.**
+
+---
+
+*Built with mission for evidence-based decision-making in UN programming* 🇺🇳
