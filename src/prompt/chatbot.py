@@ -1,17 +1,24 @@
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any
+from openai import AzureOpenAI
 
 def get_azure_openai_client(model_type="4o"):
-    """Get Azure OpenAI client from commonconst with safe fallback"""
-    try:
-        # Import here to avoid circular imports
-        from ..commonconst import client_4o, DEPLOYMENT_4O
+    """Get Azure OpenAI client from commonconst with fallback handling"""
+    from src.commonconst import client_4o, client_o1
+    
+    if model_type == "4o":
         if client_4o is None:
+            st.warning("⚠️ GPT-4o client not available. Please configure Azure OpenAI credentials.")
             return None
         return client_4o
-    except Exception as e:
-        st.warning(f"Azure OpenAI GPT-4o client not available: {e}")
+    elif model_type == "o1":
+        if client_o1 is None:
+            st.warning("⚠️ O1 client not available. Please configure Azure OpenAI credentials.")
+            return None
+        return client_o1
+    else:
+        st.error(f"Unknown model type: {model_type}")
         return None
 
 def create_financial_data_summary(df: pd.DataFrame, region: str, theme: str) -> str:
@@ -348,15 +355,11 @@ def get_chatbot_response(
         
         # Call Azure OpenAI API
         try:
+            from src.commonconst import DEPLOYMENT_4O
+            
             client = get_azure_openai_client()
-            if client is None:
-                return "🤖 **AI Chatbot Unavailable:** Azure OpenAI service is currently not configured. Using data analysis only."
-            
-            # Import deployment name from commonconst
-            from ..commonconst import DEPLOYMENT_4O
-            
-            if DEPLOYMENT_4O is None:
-                return "🤖 **AI Chatbot Unavailable:** Azure OpenAI deployment configuration missing. Using data analysis only."
+            if client is None or DEPLOYMENT_4O is None:
+                return "❌ **Error:** Azure OpenAI service not available. AI features are currently disabled due to missing credentials."
             
             response = client.chat.completions.create(
                 model=DEPLOYMENT_4O,

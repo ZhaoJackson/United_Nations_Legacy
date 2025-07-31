@@ -1,17 +1,24 @@
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any
+from openai import AzureOpenAI
 
 def get_azure_openai_client(model_type="o1"):
-    """Get Azure OpenAI client from commonconst with safe fallback"""
-    try:
-        # Import here to avoid circular imports
-        from ..commonconst import client_o1, DEPLOYMENT_O1
+    """Get Azure OpenAI client from commonconst with fallback handling"""
+    from src.commonconst import client_4o, client_o1
+    
+    if model_type == "4o":
+        if client_4o is None:
+            st.warning("⚠️ GPT-4o client not available. Please configure Azure OpenAI credentials.")
+            return None
+        return client_4o
+    elif model_type == "o1":
         if client_o1 is None:
+            st.warning("⚠️ O1 client not available. Please configure Azure OpenAI credentials.")
             return None
         return client_o1
-    except Exception as e:
-        st.warning(f"Azure OpenAI O1 client not available: {e}")
+    else:
+        st.error(f"Unknown model type: {model_type}")
         return None
 
 def create_anomaly_detection_prompt(
@@ -142,15 +149,14 @@ def call_o1_api(prompt: str) -> str:
         client = get_azure_openai_client()
         
         if client is None:
-            return "🤖 Azure OpenAI O1 service is currently unavailable. AI anomaly detection features require proper configuration."
-        
-        # Import deployment name from commonconst
-        from ..commonconst import DEPLOYMENT_O1
-        
-        if DEPLOYMENT_O1 is None:
-            return "🤖 Azure OpenAI deployment configuration missing. Please check system settings."
+            return "❌ Unable to connect to Azure OpenAI O1 service. Please check your configuration."
         
         start_time = time.time()
+        
+        from src.commonconst import DEPLOYMENT_O1
+        
+        if client is None or DEPLOYMENT_O1 is None:
+            return "❌ Azure OpenAI O1 service not available. AI features are currently disabled due to missing credentials."
         
         response = client.chat.completions.create(
             model=DEPLOYMENT_O1,
@@ -163,15 +169,16 @@ def call_o1_api(prompt: str) -> str:
         result = response.choices[0].message.content
         
         if elapsed_time > 7:
-            result += f"\n\n*⏱️ Processing time: {elapsed_time:.1f}s - Consider adjusting filters for faster analysis*"
+            result += f"\n\n*Processing time: {elapsed_time:.1f}s - Consider adjusting filters for faster analysis*"
         else:
-            result += f"\n\n*⚡ Analysis completed in {elapsed_time:.1f}s*"
+            result += f"\n\n*Analysis completed in {elapsed_time:.1f}s*"
         
         return result
         
     except Exception as e:
-        error_msg = f"AI anomaly detection temporarily unavailable: {str(e)}"
-        return f"🤖 {error_msg}. Please try again later or contact system administrator."
+        error_msg = f"Error calling O1 API: {str(e)}"
+        st.error(error_msg)
+        return f"❌ {error_msg}"
 
 def get_anomaly_detection_insights(
     analysis_type: str,

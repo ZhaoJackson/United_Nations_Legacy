@@ -1,17 +1,24 @@
 import streamlit as st
 import pandas as pd
 from typing import Dict, List, Any
+from openai import AzureOpenAI
 
 def get_azure_openai_client(model_type="4o"):
-    """Get Azure OpenAI client from commonconst with safe fallback"""
-    try:
-        # Import here to avoid circular imports
-        from ..commonconst import client_4o, DEPLOYMENT_4O
+    """Get Azure OpenAI client from commonconst with fallback handling"""
+    from src.commonconst import client_4o, client_o1
+    
+    if model_type == "4o":
         if client_4o is None:
+            st.warning("⚠️ GPT-4o client not available. Please configure Azure OpenAI credentials.")
             return None
         return client_4o
-    except Exception as e:
-        st.warning(f"Azure OpenAI GPT-4o client not available: {e}")
+    elif model_type == "o1":
+        if client_o1 is None:
+            st.warning("⚠️ O1 client not available. Please configure Azure OpenAI credentials.")
+            return None
+        return client_o1
+    else:
+        st.error(f"Unknown model type: {model_type}")
         return None
 
 def create_model_prediction_prompt(
@@ -216,15 +223,11 @@ def format_gpt4o_response(response_text: str) -> str:
 def call_gpt4o_api(prompt: str) -> str:
     """Call Azure OpenAI GPT-4o API for strategic analysis"""
     try:
+        from src.commonconst import DEPLOYMENT_4O
+        
         client = get_azure_openai_client()
-        if client is None:
-            return "🤖 Azure OpenAI GPT-4o service is currently unavailable. AI strategic analysis features require proper configuration."
-        
-        # Import deployment name from commonconst
-        from ..commonconst import DEPLOYMENT_4O
-        
-        if DEPLOYMENT_4O is None:
-            return "🤖 Azure OpenAI GPT-4o deployment configuration missing. Please check system settings."
+        if client is None or DEPLOYMENT_4O is None:
+            return "❌ **Error:** Azure OpenAI service not available. AI features are currently disabled due to missing credentials."
         
         response = client.chat.completions.create(
             model=DEPLOYMENT_4O,
@@ -246,8 +249,32 @@ def call_gpt4o_api(prompt: str) -> str:
         return response.choices[0].message.content
         
     except Exception as e:
-        error_msg = f"AI strategic analysis temporarily unavailable: {str(e)}"
-        return f"🤖 {error_msg}. Please try again later or contact system administrator.\n\n### Fallback Analysis Available\n\nThe system detected a temporary issue with AI services. Strategic insights can still be generated using local analysis tools."
+        st.error(f"Error calling Azure OpenAI API: {e}")
+        return f"""
+### Error Generating Strategic Insights
+
+We encountered an issue connecting to the Azure OpenAI service. Here's a placeholder analysis:
+
+### 1. **PREDICTION VALIDATION**
+The AI predictions appear consistent with typical UN collaboration patterns for this country-theme combination. The predicted SDG goals show alignment with regional development priorities.
+
+### 2. **STRATEGIC IMPLICATIONS** 
+These predictions suggest a multi-sectoral approach focusing on sustainable development outcomes. The agency recommendations indicate a need for coordinated implementation across technical and operational domains.
+
+### 3. **RISK ASSESSMENT**
+Based on historical patterns, coordination challenges may arise between multiple agencies. Resource mobilization should be prioritized to ensure implementation success.
+
+### 4. **ACTIONABLE RECOMMENDATIONS**
+• Establish inter-agency coordination mechanism
+• Develop integrated programming approach
+• Prioritize resource mobilization efforts  
+• Implement enhanced monitoring systems
+
+### 5. **FUNDING INSIGHTS**
+Historical funding patterns suggest consistent resource requirements. A diversified funding strategy is recommended to ensure sustainable implementation.
+
+*Note: This is a fallback response. Please check the Azure OpenAI API configuration.*
+"""
 
 def get_strategic_insights(
     country: str,

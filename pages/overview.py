@@ -177,17 +177,14 @@ with tab1:
     
     # ---------- Load and Display Key Platform Statistics ----------
     try:
-        financial_data = safe_load_csv("src/outputs/data_output/Financial_Cleaned.csv")
+        financial_data = pd.read_csv("src/outputs/data_output/Financial_Cleaned.csv")
         
-        if not financial_data.empty:
-            total_projects = len(financial_data)
-            total_countries = financial_data['Country'].nunique() if 'Country' in financial_data.columns else 0
-            total_agencies = len(financial_data['Agencies'].dropna().str.split(';').explode().unique()) if 'Agencies' in financial_data.columns else 0
-            total_funding = financial_data['Total required resources'].sum() if 'Total required resources' in financial_data.columns else 0
-            total_regions = financial_data['Region'].nunique() if 'Region' in financial_data.columns else 0
-            total_themes = financial_data['Theme'].nunique() if 'Theme' in financial_data.columns else 0
-        else:
-            total_projects = total_countries = total_agencies = total_funding = total_regions = total_themes = 0
+        total_projects = len(financial_data)
+        total_countries = financial_data['Country'].nunique()
+        total_agencies = len(financial_data['Agencies'].dropna().str.split(';').explode().unique())
+        total_funding = financial_data['Total required resources'].sum()
+        total_regions = financial_data['Region'].nunique()
+        total_themes = financial_data['Theme'].nunique()
         
     except Exception as e:
         st.error(f"Error loading financial data: {e}")
@@ -592,226 +589,385 @@ with tab2:
     </div>
     """, unsafe_allow_html=True)
     
+    # Enhanced prompt modules with actual page mappings
     prompt_modules = [
         {
             "file": "dashboard.py",
-            "title": "Dashboard Analytics",
-            "description": "O1 model prompts for comprehensive financial analysis and overview insights",
-            "page": "Main Dashboard Page",
+            "title": "📊 Dashboard Financial Analysis",
+            "description": "O1-powered comprehensive financial analysis providing insights on regional funding patterns, resource allocation efficiency, and multi-year trends for the main dashboard overview.",
+            "page": "🏠 Main Dashboard (main_page.py)", 
+            "functions": ["get_dashboard_insights()"],
+            "model": "Azure OpenAI O1",
             "color": "#009edb"
         },
         {
             "file": "funding_prediction.py", 
-            "title": "Funding Predictions",
-            "description": "O1 model prompts for analyzing funding prediction models and trends",
-            "page": "Analysis Page - Funding Predictions",
+            "title": "💰 Funding Prediction Analysis",
+            "description": "O1-driven analysis of RandomForest funding prediction models, examining required vs available resources with R² performance metrics and temporal funding patterns.",
+            "page": "📊 Analysis Page - Funding Predictions (prediction.py)",
+            "functions": ["get_funding_prediction_insights()"],
+            "model": "Azure OpenAI O1",
             "color": "#dc2626"
         },
         {
             "file": "anomaly_detection.py",
-            "title": "Anomaly Detection",
-            "description": "O1 model prompts for identifying and analyzing unusual funding patterns",
-            "page": "Analysis Page - Anomaly Detection",
+            "title": "🔍 Anomaly Detection Analysis", 
+            "description": "O1-powered analysis of LocalOutlierFactor anomaly detection results, identifying unusual funding patterns across 39 engineered features with 5% contamination rate.",
+            "page": "📊 Analysis Page - Anomaly Detection (prediction.py)",
+            "functions": ["get_anomaly_detection_insights()"],
+            "model": "Azure OpenAI O1",
             "color": "#f59e0b"
         },
         {
             "file": "agency_performance.py",
-            "title": "Agency Performance",
-            "description": "O1 model prompts for agency performance clustering and efficiency analysis",
-            "page": "Analysis Page - Agency Performance",
+            "title": "🏢 Agency Performance Analysis",
+            "description": "O1-enhanced analysis of KMeans clustering results for UN agency performance, categorizing agencies into Top/Low/Execution Gap/Moderate performance clusters.",
+            "page": "📊 Analysis Page - Agency Performance (prediction.py)", 
+            "functions": ["get_agency_performance_insights()"],
+            "model": "Azure OpenAI O1",
             "color": "#22c55e"
         },
         {
             "file": "models.py",
-            "title": "Strategic Insights",
-            "description": "GPT-4o prompts for strategic insights based on ML predictions and contextual analysis",
-            "page": "Models Page - Strategic Predictions",
+            "title": "🎯 Strategic ML Insights",
+            "description": "GPT-4o strategic analysis of XGBoost multi-label predictions for SDG goals and UN agencies, providing actionable recommendations based on country, theme, and priority codes.",
+            "page": "🎯 Models Page - Strategic Predictions (model.py)",
+            "functions": ["get_strategic_insights()", "get_comparative_insights()", "get_model_validation_insights()"],
+            "model": "Azure OpenAI GPT-4o",
             "color": "#7c3aed"
         },
         {
             "file": "chatbot.py",
-            "title": "Conversational AI",
-            "description": "GPT-4o prompts for natural language financial data analysis and interactive queries",
-            "page": "Chatbot Page - AI Assistant",
+            "title": "🤖 Conversational AI Assistant",
+            "description": "GPT-4o powered conversational interface for natural language queries on financial data, providing real-time filtering, contextual analysis, and professional insights.",
+            "page": "🤖 Chatbot Page - AI Assistant (bot.py)",
+            "functions": ["get_chatbot_response()"],
+            "model": "Azure OpenAI GPT-4o",
             "color": "#059669"
         }
     ]
     
     for i, module in enumerate(prompt_modules):
-        col1, col2 = st.columns([1, 3])
-        
-        with col1:
-            st.markdown(f"""
-            <div style="background: {module['color']}; color: white; padding: 1rem; border-radius: 10px; text-align: center; height: 100%;">
-                <h4 style="margin: 0; font-size: 1.1rem;">📄 {module['file']}</h4>
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(248,250,252,0.9) 100%); 
+                    border: 2px solid {module['color']}; border-radius: 15px; padding: 2rem; margin: 1.5rem 0; 
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <div style="display: flex; align-items: flex-start; gap: 1.5rem;">
+                <div style="min-width: 80px; width: 80px; height: 80px; background: {module['color']}; 
+                           border-radius: 15px; display: flex; align-items: center; justify-content: center; 
+                           color: white; font-size: 1.2rem; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    📄
+                </div>
+                <div style="flex: 1;">
+                    <h3 style="color: {module['color']}; margin: 0 0 0.5rem 0; font-size: 1.4rem; font-weight: 700;">
+                        {module['title']}
+                    </h3>
+                    <div style="background: rgba({module['color'][1:3]}, {module['color'][3:5]}, {module['color'][5:7]}, 0.1); 
+                               border-radius: 8px; padding: 0.5rem 1rem; margin: 0.5rem 0;">
+                        <p style="color: {module['color']}; margin: 0; font-size: 0.9rem; font-weight: 600;">
+                            🎯 {module['page']}
+                        </p>
+                    </div>
+                    <p style="color: #64748b; margin: 1rem 0; line-height: 1.7; font-size: 1rem;">
+                        {module['description']}
+                    </p>
+                    <div style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 1rem;">
+                        <div style="background: rgba(59,130,246,0.1); border-radius: 6px; padding: 0.5rem 0.8rem;">
+                            <span style="color: #3b82f6; font-size: 0.85rem; font-weight: 500;">🤖 {module['model']}</span>
+                        </div>
+                        <div style="background: rgba(16,185,129,0.1); border-radius: 6px; padding: 0.5rem 0.8rem;">
+                            <span style="color: #10b981; font-size: 0.85rem; font-weight: 500;">📝 {module['file']}</span>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(0,0,0,0.1);">
+                        <p style="color: #6b7280; margin: 0; font-size: 0.9rem;">
+                            <strong>Functions:</strong> {', '.join(module['functions'])}
+                        </p>
+                    </div>
+                </div>
             </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown(f"""
-            <div style="background: rgba(255,255,255,0.8); border: 1px solid {module['color']}; border-radius: 10px; padding: 1rem; height: 100%;">
-                <h4 style="color: {module['color']}; margin: 0 0 0.5rem 0; font-size: 1.2rem;">{module['title']}</h4>
-                <p style="color: #64748b; margin: 0 0 0.5rem 0; line-height: 1.6;">{module['description']}</p>
-                <p style="color: {module['color']}; margin: 0; font-weight: 600; font-size: 0.9rem;">
-                    🎯 Used in: {module['page']}
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        if i < len(prompt_modules) - 1:
-            st.markdown("<br>", unsafe_allow_html=True)
+        </div>
+        """, unsafe_allow_html=True)
     
     # Prompt Engineering Details
     st.markdown("---")
-    st.markdown("### 🔧 Prompt Engineering Features")
+    st.markdown("### 🔧 Advanced Prompt Engineering Framework")
+    
+    # Model comparison section
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(59,130,246,0.05) 0%, rgba(29,78,216,0.02) 100%); 
+                border: 2px solid rgba(59,130,246,0.3); border-radius: 15px; padding: 2rem; margin: 1.5rem 0;">
+        <h4 style="color: #3b82f6; margin: 0 0 1rem 0; text-align: center; font-size: 1.3rem;">
+            🤖 Dual AI Model Architecture
+        </h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+            <div style="background: rgba(124,58,237,0.1); border-radius: 10px; padding: 1.5rem;">
+                <h5 style="color: #7c3aed; margin: 0 0 1rem 0;">Azure OpenAI O1 Model</h5>
+                <ul style="color: #64748b; margin: 0; padding-left: 1.2rem; line-height: 1.6;">
+                    <li><strong>Complex reasoning</strong> for financial data analysis</li>
+                    <li><strong>Multi-step analysis</strong> workflows</li>
+                    <li><strong>Statistical interpretation</strong> capabilities</li>
+                    <li><strong>Pattern recognition</strong> in large datasets</li>
+                </ul>
+                <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(124,58,237,0.15); border-radius: 6px;">
+                    <p style="color: #7c3aed; margin: 0; font-size: 0.9rem; font-weight: 500;">
+                        Used for: Analytics, Predictions, Performance Analysis
+                    </p>
+                </div>
+            </div>
+            <div style="background: rgba(5,150,105,0.1); border-radius: 10px; padding: 1.5rem;">
+                <h5 style="color: #059669; margin: 0 0 1rem 0;">Azure OpenAI GPT-4o Model</h5>
+                <ul style="color: #64748b; margin: 0; padding-left: 1.2rem; line-height: 1.6;">
+                    <li><strong>Natural language</strong> understanding and generation</li>
+                    <li><strong>Strategic insights</strong> generation</li>
+                    <li><strong>Interactive dialogue</strong> capabilities</li>
+                    <li><strong>Professional report</strong> formatting</li>
+                </ul>
+                <div style="margin-top: 1rem; padding: 0.5rem; background: rgba(5,150,105,0.15); border-radius: 6px;">
+                    <p style="color: #059669; margin: 0; font-size: 0.9rem; font-weight: 500;">
+                        Used for: Strategic Models, Chatbot Interactions
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     features_col1, features_col2 = st.columns(2)
     
     with features_col1:
         st.markdown("""
-        #### **O1 Model Integration**
-        - **Complex reasoning** for financial data analysis
-        - **Multi-step analysis** workflows
-        - **Statistical interpretation** capabilities
-        - **Pattern recognition** in large datasets
-        """)
-        
-        st.markdown("""
-        #### **Context-Aware Processing**
+        #### **🔄 Context-Aware Processing**
         - **Dynamic data filtering** based on user selections
         - **Real-time data integration** with prompts
         - **Historical context** incorporation
         - **Multi-dimensional analysis** support
         """)
+        
+        st.markdown("""
+        #### **📊 Data Integration Pipeline**
+        - **2.2M+ financial records** processed
+        - **Real-time filtering** by region & theme
+        - **Historical trend analysis** (2020-2026)
+        - **Cross-reference validation** across datasets
+        """)
     
     with features_col2:
         st.markdown("""
-        #### **GPT-4o Integration**
-        - **Natural language** understanding and generation
-        - **Strategic insights** generation
-        - **Interactive dialogue** capabilities
-        - **Professional report** formatting
+        #### **📋 Specialized Output Framework**
+        - **5-section analysis** structure
+        - **Executive summaries** for decision makers
+        - **Technical details** for analysts
+        - **Actionable recommendations** with priorities
         """)
         
         st.markdown("""
-        #### **Specialized Outputs**
-        - **5-section analysis** framework
-        - **Executive summaries** for decision makers
-        - **Technical details** for analysts
-        - **Actionable recommendations**
+        #### **🛡️ Reliability & Fallbacks**
+        - **Graceful degradation** when AI unavailable
+        - **Error handling** with user-friendly messages
+        - **Fallback responses** for missing credentials
+        - **System status monitoring** and alerts
         """)
+    
+    # Summary statistics
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(16,185,129,0.05) 0%, rgba(5,150,105,0.02) 100%); 
+                border: 2px solid rgba(16,185,129,0.3); border-radius: 15px; padding: 2rem; margin: 2rem 0;">
+        <h4 style="color: #10b981; margin: 0 0 1.5rem 0; text-align: center; font-size: 1.3rem;">
+            📈 AI Integration Summary
+        </h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                <h5 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: bold;">6</h5>
+                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">Specialized Prompt Modules</p>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                <h5 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: bold;">5</h5>
+                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">Interactive Pages</p>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                <h5 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: bold;">2</h5>
+                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">AI Model Types</p>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: rgba(255,255,255,0.7); border-radius: 10px;">
+                <h5 style="color: #10b981; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: bold;">10+</h5>
+                <p style="color: #64748b; margin: 0; font-size: 0.9rem;">AI Functions Available</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 
 with tab3:
     st.markdown('<div class="tab-content">', unsafe_allow_html=True)
     
-    # Header Section
+    # Project Title
     st.markdown("# 👥 Project Acknowledgments")
-    st.markdown("---")
     
-    # UN Platform Title
+    # Main Platform Title
     st.markdown("""
-    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, rgba(0,158,219,0.1), rgba(0,107,182,0.05)); border-radius: 15px; margin: 2rem 0;">
-        <h2 style="color: #009edb; margin: 0; font-size: 2.2rem;">🇺🇳 UN JointWork Plans Intelligence Platform</h2>
-        <p style="color: #64748b; margin: 1rem 0 0 0; font-size: 1.1rem;">
+    <div style="background: linear-gradient(135deg, rgba(0,158,219,0.05) 0%, rgba(0,107,182,0.02) 100%); border: 2px solid rgba(0,158,219,0.3); border-radius: 20px; padding: 2rem; margin: 1rem 0; box-shadow: 0 8px 25px rgba(0,158,219,0.1); text-align: center;">
+        <h2 style="color: #009edb; margin: 0 0 1rem 0; font-size: 2.2rem; font-weight: 700;">
+            🇺🇳 UN JointWork Plans Intelligence Platform
+        </h2>
+        <p style="color: #64748b; margin: 0; line-height: 1.8; font-size: 1.2rem;">
             Developed under the <strong style="color: #009edb;">United Nations Development Coordination Office</strong>
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Developer Section
-    st.markdown("## 👨‍💻 Lead Developer")
+    # Developer Section - Enhanced Styling
+    st.markdown("### 👨‍💻 Lead Developer")
     
-    dev_col1, dev_col2 = st.columns([1, 4])
-    with dev_col1:
-        st.markdown("""
-        <div style="width: 80px; height: 80px; background: #7c3aed; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.8rem; font-weight: bold; margin: 0 auto;">
-            ZZ
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(91,33,182,0.05) 100%); 
+                border: 2px solid #7c3aed; border-radius: 15px; padding: 2rem; margin: 1rem 0; 
+                box-shadow: 0 8px 25px rgba(124,58,237,0.15);">
+        <div style="display: flex; align-items: center; gap: 2rem;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #7c3aed, #5b21b6); 
+                       border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                       color: white; font-size: 1.8rem; font-weight: bold; 
+                       box-shadow: 0 6px 20px rgba(124,58,237,0.3);">
+                ZZ
+            </div>
+            <div style="flex: 1;">
+                <h3 style="color: #7c3aed; margin: 0 0 0.5rem 0; font-size: 1.6rem; font-weight: 700;">Zichen Zhao</h3>
+                <p style="color: #64748b; margin: 0 0 1rem 0; font-size: 1.1rem; font-style: italic;">Developer Intern</p>
+                <p style="color: #7c3aed; margin: 0; font-size: 1rem; font-weight: 500;">
+                    📧 <a href="mailto:zichen.zhao@un.org" style="color: #7c3aed; text-decoration: none;">zichen.zhao@un.org</a>
+                </p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Guidance Team Section  
+    st.markdown("### 🎯 Project Guidance & Supervision")
+    st.markdown("This project was developed under the expert guidance and supervision of:")
+    
+    # Supervisors - Enhanced Styling
+    supervisors = [
+        ("Kirit Patel", "patelk@un.org", "Project Supervisor", "#009edb", "KP"),
+        ("Katarina Kuai", "katarina.kuai@un.org", "Project Supervisor", "#7c3aed", "KK"),
+        ("Tala Chammas", "tala.chammas@un.org", "Project Supervisor", "#dc2626", "TC"),
+        ("Hanna Stenback-Koehler", "hanna.stenbackakoehler@un.org", "Strategic Oversight", "#f59e0b", "HSK"),
+        ("Muhammad Ahmad", "muhammad.ahmad2@un.org", "Data & Analytics Guidance", "#22c55e", "MA")
+    ]
+    
+    # Create a more balanced layout for 5 supervisors
+    for i, (name, email, role, color, initials) in enumerate(supervisors):
+        st.markdown(f"""
+        <div style="background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(248,250,252,0.8) 100%); 
+                    border: 2px solid {color}; border-radius: 15px; padding: 1.5rem; margin: 1rem 0; 
+                    box-shadow: 0 6px 20px rgba(0,0,0,0.1); transition: transform 0.3s ease;">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div style="width: 60px; height: 60px; background: {color}; border-radius: 50%; 
+                           display: flex; align-items: center; justify-content: center; 
+                           color: white; font-size: 1.3rem; font-weight: bold; 
+                           box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                    {initials}
+                </div>
+                <div style="flex: 1;">
+                    <h4 style="color: {color}; margin: 0 0 0.5rem 0; font-size: 1.3rem; font-weight: 600;">{name}</h4>
+                    <p style="color: #64748b; margin: 0 0 0.5rem 0; font-size: 1rem; font-style: italic;">{role}</p>
+                    <p style="color: {color}; margin: 0; font-size: 0.9rem; font-weight: 500;">
+                        📧 <a href="mailto:{email}" style="color: {color}; text-decoration: none;">{email}</a>
+                    </p>
+                </div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
     
-    with dev_col2:
-        st.markdown("### Zichen Zhao")
-        st.markdown("**Position:** Developer Intern")
-        st.markdown("**Email:** [zichen.zhao@un.org](mailto:zichen.zhao@un.org)")
-        st.markdown("**Role:** Lead development of the AI-powered analytics platform, implementing machine learning models, data processing pipelines, and interactive user interfaces.")
-    
-    st.markdown("---")
-    
-    # Guidance Team Section
-    st.markdown("## 🎯 Project Guidance & Supervision")
-    st.markdown("This project was developed under the expert guidance and supervision of:")
-    st.markdown("")
-    
-    # Supervisors using simple Streamlit components
-    supervisors = [
-        {
-            "name": "Kirit Patel",
-            "email": "patelk@un.org",
-            "role": "Project Supervisor"
-        },
-        {
-            "name": "Tala Chammas",
-            "email": "tala.chammas@un.org", 
-            "role": "Technical Guidance"
-        },
-        {
-            "name": "Hanna Stenback-Koehler",
-            "email": "hanna.stenbackakoehler@un.org",
-            "role": "Strategic Oversight"
-        },
-        {
-            "name": "Muhammad Ahmad",
-            "email": "muhammad.ahmad2@un.org",
-            "role": "Data & Analytics Guidance"
-        }
-    ]
-    
-    supervisor_cols = st.columns(2)
-    
-    for i, supervisor in enumerate(supervisors):
-        with supervisor_cols[i % 2]:
-            with st.container():
-                st.markdown(f"### {supervisor['name']}")
-                st.markdown(f"**Role:** {supervisor['role']}")
-                st.markdown(f"**Email:** [{supervisor['email']}](mailto:{supervisor['email']})")
-                st.markdown("")
-    
-    # Organization Section  
-    st.markdown("---")
-    st.markdown("## 🏢 United Nations Development Coordination Office")
+    # Organization Section - Enhanced
+    st.markdown("### 🏢 United Nations Development Coordination Office")
     
     st.markdown("""
-    The UN Development Coordination Office (DCO) supports the Resident Coordinator system, 
-    which leads United Nations development action at the country level towards achieving the 
-    Sustainable Development Goals.
-    """)
-    
-    st.info("🌍 **Mission:** Promoting peace, dignity and equality on a healthy planet through coordinated action")
+    <div style="background: linear-gradient(135deg, rgba(0,158,219,0.08) 0%, rgba(0,107,182,0.03) 100%); 
+                border: 2px solid rgba(0,158,219,0.3); border-radius: 20px; padding: 2rem; margin: 2rem 0; 
+                box-shadow: 0 8px 32px rgba(0,158,219,0.15);">
+        <div style="display: flex; align-items: center; gap: 2rem; margin-bottom: 1.5rem;">
+            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #009edb, #006bb6); 
+                       border-radius: 20px; display: flex; align-items: center; justify-content: center; 
+                       color: white; font-size: 2rem; box-shadow: 0 6px 20px rgba(0,158,219,0.3);">
+                🏢
+            </div>
+            <div>
+                <h4 style="color: #009edb; margin: 0 0 0.5rem 0; font-size: 1.4rem; font-weight: 700;">
+                    United Nations Development Coordination Office
+                </h4>
+                <p style="color: #64748b; margin: 0; font-size: 1rem; font-style: italic;">
+                    Supporting the global mission for sustainable development
+                </p>
+            </div>
+        </div>
+                 <p style="color: #475569; margin: 0 0 1.5rem 0; line-height: 1.8; font-size: 1rem;">
+             The UN Development Coordination Office (DCO) supports the Resident Coordinator system, 
+             which leads United Nations development action at the country level towards achieving the 
+             Sustainable Development Goals. DCO manages and oversees 130 Resident Coordinators and 
+             132 Resident Coordinator's offices covering 162 countries and territories worldwide.
+         </p>
+         <div style="background: rgba(0,158,219,0.15); border-radius: 12px; padding: 1.5rem; 
+                     border-left: 4px solid #009edb; margin-bottom: 1.5rem;">
+             <p style="color: #009edb; margin: 0; font-weight: 600; font-size: 1.1rem; text-align: center;">
+                 🌍 <strong>Mission:</strong> Promoting peace, dignity and equality on a healthy planet through coordinated action
+             </p>
+         </div>
+         <div style="text-align: center; margin-top: 1.5rem;">
+             <a href="https://un-dco.org/" target="_blank" 
+                style="display: inline-block; background: linear-gradient(135deg, #009edb, #006bb6); 
+                       color: white; padding: 0.8rem 2rem; border-radius: 10px; text-decoration: none; 
+                       font-weight: 600; font-size: 1rem; box-shadow: 0 4px 12px rgba(0,158,219,0.3);
+                       transition: transform 0.3s ease, box-shadow 0.3s ease;">
+                🔗 Visit Official UN DCO Website
+             </a>
+             <p style="color: #6b7280; margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                 Learn more about the UN Development Coordination Office's global work
+             </p>
+         </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     # Technology & Innovation Section
-    st.markdown("---")
-    st.markdown("## 🚀 Innovation & Technology")
+    st.markdown("### 🚀 Innovation & Technology")
     
     st.markdown("""
     This platform represents the UN's commitment to leveraging cutting-edge artificial intelligence 
     and data science technologies to enhance global development coordination and strategic planning.
     """)
     
-    tech_col1, tech_col2, tech_col3 = st.columns(3)
-    
-    with tech_col1:
-        st.markdown("### 🤖 AI Integration")
-        st.markdown("GPT-4o & O1 Models")
-    
-    with tech_col2:
-        st.markdown("### 📊 Data Science") 
-        st.markdown("ML & Analytics")
-    
-    with tech_col3:
-        st.markdown("### 🌐 Global Impact")
-        st.markdown("SDG Achievement")
+    # Enhanced technology showcase
+    st.markdown("""
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+        <div style="background: linear-gradient(135deg, rgba(124,58,237,0.1) 0%, rgba(91,33,182,0.05) 100%); 
+                    border: 2px solid #7c3aed; border-radius: 15px; padding: 1.5rem; text-align: center;
+                    box-shadow: 0 6px 20px rgba(124,58,237,0.1);">
+            <div style="width: 60px; height: 60px; background: #7c3aed; border-radius: 50%; 
+                       display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;
+                       color: white; font-size: 1.5rem;">🤖</div>
+            <h4 style="color: #7c3aed; margin: 0 0 0.5rem 0; font-size: 1.2rem; font-weight: 600;">AI Integration</h4>
+            <p style="color: #64748b; margin: 0; font-size: 0.95rem;">Azure OpenAI GPT-4o & O1 Models</p>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(220,38,38,0.1) 0%, rgba(185,28,28,0.05) 100%); 
+                    border: 2px solid #dc2626; border-radius: 15px; padding: 1.5rem; text-align: center;
+                    box-shadow: 0 6px 20px rgba(220,38,38,0.1);">
+            <div style="width: 60px; height: 60px; background: #dc2626; border-radius: 50%; 
+                       display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;
+                       color: white; font-size: 1.5rem;">📊</div>
+            <h4 style="color: #dc2626; margin: 0 0 0.5rem 0; font-size: 1.2rem; font-weight: 600;">Data Science</h4>
+            <p style="color: #64748b; margin: 0; font-size: 0.95rem;">ML & Advanced Analytics</p>
+        </div>
+        <div style="background: linear-gradient(135deg, rgba(5,150,105,0.1) 0%, rgba(4,120,87,0.05) 100%); 
+                    border: 2px solid #059669; border-radius: 15px; padding: 1.5rem; text-align: center;
+                    box-shadow: 0 6px 20px rgba(5,150,105,0.1);">
+            <div style="width: 60px; height: 60px; background: #059669; border-radius: 50%; 
+                       display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto;
+                       color: white; font-size: 1.5rem;">🌐</div>
+            <h4 style="color: #059669; margin: 0 0 0.5rem 0; font-size: 1.2rem; font-weight: 600;">Global Impact</h4>
+            <p style="color: #64748b; margin: 0; font-size: 0.95rem;">SDG Achievement & Development</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown('</div>', unsafe_allow_html=True)
 

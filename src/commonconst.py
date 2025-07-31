@@ -13,7 +13,12 @@ from xgboost import XGBRegressor
 import pycountry
 from pathlib import Path
 
-# Azure OpenAI Credentials - with fallback for missing secrets
+# Azure OpenAI Credentials with fallback for missing secrets
+client_4o = None
+client_o1 = None
+DEPLOYMENT_4O = None
+DEPLOYMENT_O1 = None
+
 try:
     client_4o = AzureOpenAI(
         api_key=st.secrets["AZURE_OPENAI_4O_API_KEY"],
@@ -28,19 +33,10 @@ try:
         azure_endpoint=st.secrets["AZURE_OPENAI_O1_ENDPOINT"]
     )
     DEPLOYMENT_O1 = st.secrets["AZURE_OPENAI_O1_DEPLOYMENT"]
-    
-    # Flag to indicate if AI services are available
-    AI_SERVICES_AVAILABLE = True
-    
 except KeyError as e:
-    st.warning(f"⚠️ AI services not configured: Missing secret {e}. Some features may be limited.")
-    
-    # Create dummy clients to prevent import errors
-    client_4o = None
-    client_o1 = None
-    DEPLOYMENT_4O = "dummy"
-    DEPLOYMENT_O1 = "dummy"
-    AI_SERVICES_AVAILABLE = False
+    st.warning(f"⚠️ Azure OpenAI credentials not configured. Some AI features may be disabled. Missing: {e}")
+except Exception as e:
+    st.error(f"❌ Error initializing Azure OpenAI clients: {e}")
 
 # Directory paths
 FINANCIAL_PATH = "src/outputs/data_output/Financial_Cleaned.csv"
@@ -218,28 +214,13 @@ def get_theme_file_mapping():
     
     return theme_mapping
 
-# Safe data loading with error handling and fallback data
-def safe_load_csv(file_path, default_df=None, use_fallback=True):
-    """Safely load CSV files with error handling and fallback data"""
+# Safe data loading with error handling
+def safe_load_csv(file_path, default_df=None):
+    """Safely load CSV files with error handling"""
     try:
         if Path(file_path).exists():
             return pd.read_csv(file_path)
         else:
-            if use_fallback:
-                # Try to use fallback data for common file types
-                if "Financial_Cleaned.csv" in file_path:
-                    from src.fallback_data import get_fallback_data, create_demo_message
-                    st.info("📋 Using sample financial data for demonstration purposes.")
-                    return get_fallback_data('financial')
-                elif "SDG_Goals_Cleaned.csv" in file_path:
-                    from src.fallback_data import get_fallback_data
-                    st.info("📋 Using sample SDG data for demonstration purposes.")
-                    return get_fallback_data('sdg')
-                elif "UN_Agencies_Cleaned.csv" in file_path:
-                    from src.fallback_data import get_fallback_data
-                    st.info("📋 Using sample agency data for demonstration purposes.")
-                    return get_fallback_data('agency')
-            
             st.warning(f"Data file not found: {file_path}. Using empty DataFrame.")
             return default_df if default_df is not None else pd.DataFrame()
     except Exception as e:
@@ -271,12 +252,7 @@ available_cols = [col for col in financial_year_cols if "Available" in col]
 expenditure_cols = [col for col in financial_year_cols if "Expenditure" in col]
 
 def get_country_list():
-    """Get comprehensive country list with safe column access"""
-    if not financial_df.empty and "Country" in financial_df.columns:
-        return sorted(financial_df["Country"].dropna().unique())
-    else:
-        # Return fallback country list when data is unavailable
-        return ['Afghanistan', 'Bangladesh', 'Ethiopia', 'Kenya', 'Nigeria', 'Pakistan', 'Somalia', 'South Sudan', 'Sudan', 'Yemen']
+    return sorted(financial_df["Country"].dropna().unique())
 
 def get_theme_list():
     """Get comprehensive theme list from both data files and filesystem"""
@@ -349,87 +325,52 @@ def check_data_completeness():
     return completeness_report
 
 def get_agencies_list():
-    """Extract unique UN agencies from the financial data with safe column access"""
+    """Extract unique UN agencies from the financial data"""
     agencies_set = set()
-    
-    if not financial_df.empty and "Agencies" in financial_df.columns:
-        for agencies_str in financial_df["Agencies"].dropna().unique():
-            if pd.notna(agencies_str) and str(agencies_str).strip():
-                # Split by semicolon and comma, then clean up
-                agencies = re.split(r'[;,]', str(agencies_str))
-                for agency in agencies:
-                    clean_agency = agency.strip()
-                    if clean_agency and len(clean_agency) > 3:  # Filter out very short strings
-                        agencies_set.add(clean_agency)
-    
-    # Return fallback agency list when data is unavailable or empty
-    if not agencies_set:
-        agencies_set = {'UNICEF', 'WHO', 'WFP', 'UNDP', 'UNHCR', 'UNESCO', 'FAO', 'UNIDO', 'UNFPA', 'ILO'}
-    
+    for agencies_str in financial_df["Agencies"].dropna().unique():
+        if pd.notna(agencies_str) and str(agencies_str).strip():
+            # Split by semicolon and comma, then clean up
+            agencies = re.split(r'[;,]', str(agencies_str))
+            for agency in agencies:
+                clean_agency = agency.strip()
+                if clean_agency and len(clean_agency) > 3:  # Filter out very short strings
+                    agencies_set.add(clean_agency)
     return sorted(list(agencies_set))
 
 def get_sdg_goals_list():
-    """Extract unique SDG goals from the financial data with safe column access"""
+    """Extract unique SDG goals from the financial data"""
     sdg_set = set()
-    
-    if not financial_df.empty and "SDG Goals" in financial_df.columns:
-        for sdg_str in financial_df["SDG Goals"].dropna().unique():
-            if pd.notna(sdg_str) and str(sdg_str).strip():
-                # Split by semicolon and comma, then clean up
-                sdgs = re.split(r'[;,]', str(sdg_str))
-                for sdg in sdgs:
-                    clean_sdg = sdg.strip()
-                    if clean_sdg and len(clean_sdg) > 3:  # Filter out very short strings
-                        sdg_set.add(clean_sdg)
-    
-    # Return fallback SDG goals list when data is unavailable or empty
-    if not sdg_set:
-        sdg_set = {
-            'SDG 1: No Poverty', 'SDG 2: Zero Hunger', 'SDG 3: Good Health and Well-being',
-            'SDG 4: Quality Education', 'SDG 5: Gender Equality', 'SDG 6: Clean Water and Sanitation',
-            'SDG 8: Decent Work and Economic Growth', 'SDG 10: Reduced Inequalities',
-            'SDG 11: Sustainable Cities and Communities', 'SDG 16: Peace, Justice and Strong Institutions'
-        }
-    
+    for sdg_str in financial_df["SDG Goals"].dropna().unique():
+        if pd.notna(sdg_str) and str(sdg_str).strip():
+            # Split by semicolon and comma, then clean up
+            sdgs = re.split(r'[;,]', str(sdg_str))
+            for sdg in sdgs:
+                clean_sdg = sdg.strip()
+                if clean_sdg and len(clean_sdg) > 3:  # Filter out very short strings
+                    sdg_set.add(clean_sdg)
     return sorted(list(sdg_set))
 
 def filter_by_agency(df, selected_agency):
-    """Filter dataframe by selected UN agency with safe column access"""
+    """Filter dataframe by selected UN agency"""
     if selected_agency == "All Agencies":
         return df
-    if "Agencies" in df.columns:
-        return df[df["Agencies"].str.contains(selected_agency, case=False, na=False)]
-    else:
-        # Return empty dataframe if column doesn't exist
-        return df.iloc[0:0]
+    return df[df["Agencies"].str.contains(selected_agency, case=False, na=False)]
 
 def filter_by_sdg(df, selected_sdg):
-    """Filter dataframe by selected SDG goal with safe column access"""
+    """Filter dataframe by selected SDG goal"""
     if selected_sdg == "All SDG Goals":
         return df
-    if "SDG Goals" in df.columns:
-        return df[df["SDG Goals"].str.contains(selected_sdg, case=False, na=False)]
-    else:
-        # Return empty dataframe if column doesn't exist
-        return df.iloc[0:0]
+    return df[df["SDG Goals"].str.contains(selected_sdg, case=False, na=False)]
 
 # ---------- Page 2 - Model Analysis Functions ----------
 def get_performance_labels():
-    """Get unique performance labels from agency clustering with safe column access"""
-    if not un_agency_performance_df.empty and "Performance_Label" in un_agency_performance_df.columns:
-        return sorted(un_agency_performance_df["Performance_Label"].dropna().unique())
-    else:
-        # Return fallback performance labels when data is unavailable
-        return ['Top Performer', 'Moderate Performer', 'Execution Gap', 'Low Performer']
+    """Get unique performance labels from agency clustering"""
+    return sorted(un_agency_performance_df["Performance_Label"].dropna().unique())
 
 def get_anomaly_countries():
-    """Get countries with anomalous strategic priorities with safe column access"""
-    if not anomaly_detection_df.empty and "SP_Anomaly_Flag" in anomaly_detection_df.columns and "Country" in anomaly_detection_df.columns:
-        anomalous_data = anomaly_detection_df[anomaly_detection_df["SP_Anomaly_Flag"] == "Yes"]
-        return sorted(anomalous_data["Country"].dropna().unique())
-    else:
-        # Return fallback countries when data is unavailable
-        return ['Afghanistan', 'Ethiopia', 'Nigeria', 'Somalia', 'Sudan']
+    """Get countries with anomalous strategic priorities"""
+    anomalous_data = anomaly_detection_df[anomaly_detection_df["SP_Anomaly_Flag"] == "Yes"]
+    return sorted(anomalous_data["Country"].dropna().unique())
 
 def format_currency(value):
     """Format large currency values for display"""
@@ -758,10 +699,10 @@ def predict_agencies(model, country, theme, strategic_priority_code):
 def get_historical_context(country, theme, strategic_priority_code):
     """Get historical context from the datasets for predictions"""
     try:
-        # Load the datasets using path constants with safe loading
-        funding_df = safe_load_csv(FUNDING_PREDICTION_PATH)
-        anomaly_df = safe_load_csv(ANOMALY_DETECTION_PATH)
-        agency_df = safe_load_csv(UN_AGENCY_PERFORMANCE_PATH)
+        # Load the datasets using path constants
+        funding_df = pd.read_csv(FUNDING_PREDICTION_PATH)
+        anomaly_df = pd.read_csv(ANOMALY_DETECTION_PATH)
+        agency_df = pd.read_csv(UN_AGENCY_PERFORMANCE_PATH)
         
         # Filter for the specific inputs
         context = {}

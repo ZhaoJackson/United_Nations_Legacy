@@ -1,13 +1,6 @@
 from src.commonconst import *
 from src.dynamic_analysis import DynamicDataProcessor
-
-# Import from the prompt package using the __init__ exports
-try:
-    from src.prompt import get_dashboard_insights
-except ImportError:
-    # Fallback for deployment environments
-    def get_dashboard_insights(*args, **kwargs):
-        return "Dashboard insights temporarily unavailable. Please check system configuration."
+from src.prompt.dashboard import get_dashboard_insights
 
 # Initialize dynamic data processor
 @st.cache_resource
