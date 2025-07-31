@@ -1,8 +1,15 @@
+import sys
+import os
+from pathlib import Path
+
+# Ensure project root is in Python path for imports
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.commonconst import *
 from src.prompt.funding_prediction import get_funding_prediction_insights
 from src.prompt.anomaly_detection import get_anomaly_detection_insights
 from src.prompt.agency_performance import get_agency_performance_insights
-from pathlib import Path
 
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:

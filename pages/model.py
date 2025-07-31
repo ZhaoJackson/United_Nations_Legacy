@@ -1,3 +1,10 @@
+import sys
+import os
+
+# Ensure project root is in Python path for imports
+if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
+    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.commonconst import *
 from src.prompt.models import get_strategic_insights
 from src.dynamic_analysis import DynamicDataProcessor
