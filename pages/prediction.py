@@ -2,14 +2,40 @@ import sys
 import os
 from pathlib import Path
 
-# Ensure project root is in Python path for imports
-if os.path.dirname(os.path.dirname(os.path.abspath(__file__))) not in sys.path:
-    sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Robust path handling for both local and Streamlit Cloud deployment
+def setup_python_path():
+    """Setup Python path to ensure src modules can be imported"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)  # Go up one level from pages/
+    src_dir = os.path.join(project_root, 'src')
+    
+    # Add both project root and src directory to Python path
+    paths_to_add = [project_root, src_dir]
+    
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
 
-from src.commonconst import *
-from src.prompt.funding_prediction import get_funding_prediction_insights
-from src.prompt.anomaly_detection import get_anomaly_detection_insights
-from src.prompt.agency_performance import get_agency_performance_insights
+# Initialize path setup
+setup_python_path()
+
+try:
+    from src.commonconst import *
+    from src.prompt.funding_prediction import get_funding_prediction_insights
+    from src.prompt.anomaly_detection import get_anomaly_detection_insights
+    from src.prompt.agency_performance import get_agency_performance_insights
+except ImportError as e:
+    print(f"Import error in prediction.py: {e}")
+    # Fallback imports for deployment
+    try:
+        import streamlit as st
+        from commonconst import *
+        from prompt.funding_prediction import get_funding_prediction_insights
+        from prompt.anomaly_detection import get_anomaly_detection_insights
+        from prompt.agency_performance import get_agency_performance_insights
+    except ImportError as fallback_error:
+        st.error(f"Failed to import required modules: {fallback_error}")
+        st.stop()
 
 # ---------- Enhanced Custom Styles ----------
 with open(STYLE_CSS_PATH) as f:

@@ -83,4 +83,8 @@ venv.bak/
 .Spotlight-V100
 .Trashes
 ehthumbs.db
-Thumbs.db 
+Thumbs.db
+
+# Make sure we don't exclude important __init__.py files needed for proper imports
+!src/__init__.py
+!src/prompt/__init__.py 

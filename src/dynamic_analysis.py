@@ -16,6 +16,26 @@ from typing import Dict, List, Any, Optional, Tuple
 import warnings
 warnings.filterwarnings('ignore')
 
+# Robust path handling for import issues in deployment
+import sys
+import os
+
+def setup_python_path():
+    """Setup Python path to ensure modules can be imported"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)  # Go up one level from src/
+    src_dir = current_dir  # We're already in src/
+    
+    # Add both project root and src directory to Python path
+    paths_to_add = [project_root, src_dir]
+    
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
+# Initialize path setup
+setup_python_path()
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
