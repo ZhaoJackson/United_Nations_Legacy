@@ -1,17 +1,49 @@
 # commonconst.py
-from openai import AzureOpenAI
-import numpy as np
-from pathlib import Path
-import streamlit as st
-import pandas as pd
-import re
+import sys
 import os
+import re
+import time
+import json
+import math
+import random
+import copy
+import gc
+import logging
+import warnings
+import importlib
+import itertools
+import collections
+import multiprocessing
+from pathlib import Path
+from io import StringIO
+from typing import Dict, List, Any, Optional, Tuple, Union, Callable
+import numpy as np
+import pandas as pd
+import joblib
 import plotly.express as px
 import plotly.graph_objects as go
-from io import StringIO
+import streamlit as st
+from openai import AzureOpenAI
 from xgboost import XGBRegressor
 import pycountry
-from pathlib import Path
+warnings.filterwarnings('ignore')
+
+# Setting up the python path
+def setup_python_path():
+    """Setup Python path to ensure src modules can be imported"""
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(current_dir)  # Go up one level from pages/
+    src_dir = os.path.join(project_root, 'src')
+    
+    # Add both project root and src directory to Python path
+    paths_to_add = [project_root, src_dir]
+    
+    for path in paths_to_add:
+        if path not in sys.path:
+            sys.path.insert(0, path)
+
+# Initialize path setup
+setup_python_path()
 
 # Azure OpenAI Credentials with fallback for missing secrets
 client_4o = None
@@ -81,36 +113,8 @@ PAGE_CONFIG = {
     }
 }
 
-# Social Media Meta Tags for LinkedIn sharing
-def get_social_meta_tags(app_url="https://your-app-name.streamlit.app/"):
-    """Generate social media meta tags with custom app URL"""
-    # Create a professional preview image using a service like og-image or similar
-    og_image_url = "https://og-image.vercel.app/**UN%20Financial%20Intelligence**%20Dashboard.png?theme=light&md=1&fontSize=100px&images=https%3A%2F%2Fassets.vercel.com%2Fimage%2Fupload%2Ffront%2Fassets%2Fdesign%2Fvercel-triangle-black.svg"
-    
-    return f"""
-<meta property="og:title" content="UN Financial Intelligence Dashboard - JointWork Plans Analysis">
-<meta property="og:description" content="Comprehensive analysis of UN JointWork Plans financial data with AI-powered insights into funding patterns, resource allocation, and collaboration trends across regions and themes.">
-<meta property="og:type" content="website">
-<meta property="og:url" content="{app_url}">
-<meta property="og:image" content="{og_image_url}">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta property="og:site_name" content="UN Financial Intelligence Dashboard">
-
-<meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="UN Financial Intelligence Dashboard">
-<meta name="twitter:description" content="AI-powered analysis of UN JointWork Plans financial data with comprehensive insights into funding patterns and collaboration trends.">
-<meta name="twitter:image" content="{og_image_url}">
-
-<meta name="description" content="UN Financial Intelligence Dashboard provides comprehensive analysis of JointWork Plans financial data, enabling insights into funding patterns, resource allocation, and collaboration trends across different regions, themes, and UN agencies.">
-<meta name="keywords" content="UN, United Nations, Financial Analysis, JointWork Plans, Funding, Resource Allocation, Dashboard, AI, Analytics">
-<meta name="author" content="UN Financial Intelligence Team">
-
-<link rel="canonical" href="{app_url}">
-"""
-
-# Default social media meta tags (will be updated when app is deployed)
-SOCIAL_META_TAGS = get_social_meta_tags()
+# LinkedIn sharing is handled automatically by Streamlit's page configuration
+# The page_title, page_icon, and About section in PAGE_CONFIG provide the necessary metadata
 
 # Year ranges for analysis
 PLOT_YEAR_RANGE = list(range(2020, 2026))

@@ -1,38 +1,6 @@
-import sys
-import os
-
-# Robust path handling for both local and Streamlit Cloud deployment
-def setup_python_path():
-    """Setup Python path to ensure src modules can be imported"""
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    project_root = os.path.dirname(current_dir)  # Go up one level from pages/
-    src_dir = os.path.join(project_root, 'src')
-    
-    # Add both project root and src directory to Python path
-    paths_to_add = [project_root, src_dir]
-    
-    for path in paths_to_add:
-        if path not in sys.path:
-            sys.path.insert(0, path)
-
-# Initialize path setup
-setup_python_path()
-
-try:
-    from src.commonconst import *
-    from src.prompt.models import get_strategic_insights
-    from src.dynamic_analysis import DynamicDataProcessor
-except ImportError as e:
-    print(f"Import error in model.py: {e}")
-    # Fallback imports for deployment
-    try:
-        import streamlit as st
-        from commonconst import *
-        from prompt.models import get_strategic_insights
-        from dynamic_analysis import DynamicDataProcessor
-    except ImportError as fallback_error:
-        st.error(f"Failed to import required modules: {fallback_error}")
-        st.stop()
+from src.commonconst import *
+from src.dynamic_analysis import *
+from src.prompt.models import *
 
 # Initialize dynamic data processor
 @st.cache_resource

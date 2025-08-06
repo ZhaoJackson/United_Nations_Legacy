@@ -1,18 +1,3 @@
-# =============================================================================
-# UN Financial Intelligence Dashboard - Python Dependencies & Deployment Config
-# =============================================================================
-# 
-# DEPLOYMENT CONFIGURATION:
-# -------------------------
-# Python Version: 3.11.9
-# System Dependencies (apt packages): build-essential python3-dev
-# 
-# NOTE: If Streamlit Cloud deployment fails, you may need to create:
-# - runtime.txt containing: python-3.11.9  
-# - packages.txt containing: build-essential\npython3-dev
-# 
-# =============================================================================
-
 # Core Streamlit and web framework
 streamlit>=1.47.0,<2.0.0
 openai>=1.35.0,<2.0.0

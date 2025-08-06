@@ -1,11 +1,8 @@
-import streamlit as st
-import pandas as pd
-from typing import Dict, List, Any
-from openai import AzureOpenAI
+from src.commonconst import *
+from src.dynamic_analysis import *
 
 def get_azure_openai_client(model_type="4o"):
     """Get Azure OpenAI client from commonconst with fallback handling"""
-    from src.commonconst import client_4o, client_o1
     
     if model_type == "4o":
         if client_4o is None:
@@ -65,7 +62,6 @@ def create_financial_data_summary(df: pd.DataFrame, region: str, theme: str) -> 
 def create_chatbot_system_prompt() -> str:
     """Create the system prompt for the UN Financial Intelligence Chatbot with dynamic theme awareness"""
     try:
-        from src.commonconst import get_theme_list, get_region_list
         
         # Get current available themes and regions dynamically
         available_themes = get_theme_list()
@@ -134,7 +130,6 @@ def create_chatbot_analysis_prompt(
     """Create a comprehensive prompt for chatbot financial data analysis with dynamic theme support"""
     
     try:
-        from src.commonconst import get_theme_list, get_region_list, get_available_themes_for_region
         
         # Get current data scope
         all_themes = get_theme_list()
@@ -355,7 +350,6 @@ def get_chatbot_response(
         
         # Call Azure OpenAI API
         try:
-            from src.commonconst import DEPLOYMENT_4O
             
             client = get_azure_openai_client()
             if client is None or DEPLOYMENT_4O is None:

@@ -1,11 +1,7 @@
-import streamlit as st
-import pandas as pd
-from typing import Dict, List, Any
-from openai import AzureOpenAI
+from src.commonconst import *
 
 def get_azure_openai_client(model_type="o1"):
     """Get Azure OpenAI client from commonconst with fallback handling"""
-    from src.commonconst import client_4o, client_o1
     
     if model_type == "4o":
         if client_4o is None:
@@ -153,7 +149,6 @@ def call_o1_api(prompt: str) -> str:
         
         start_time = time.time()
         
-        from src.commonconst import DEPLOYMENT_O1
         
         if client is None or DEPLOYMENT_O1 is None:
             return "❌ Azure OpenAI O1 service not available. AI features are currently disabled due to missing credentials."

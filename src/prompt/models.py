@@ -1,11 +1,8 @@
-import streamlit as st
-import pandas as pd
-from typing import Dict, List, Any
-from openai import AzureOpenAI
+from src.commonconst import *
+from src.dynamic_analysis import *
 
 def get_azure_openai_client(model_type="4o"):
     """Get Azure OpenAI client from commonconst with fallback handling"""
-    from src.commonconst import client_4o, client_o1
     
     if model_type == "4o":
         if client_4o is None:
@@ -223,7 +220,6 @@ def format_gpt4o_response(response_text: str) -> str:
 def call_gpt4o_api(prompt: str) -> str:
     """Call Azure OpenAI GPT-4o API for strategic analysis"""
     try:
-        from src.commonconst import DEPLOYMENT_4O
         
         client = get_azure_openai_client()
         if client is None or DEPLOYMENT_4O is None:

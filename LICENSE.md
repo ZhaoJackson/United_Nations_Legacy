@@ -8,4 +8,4 @@ The source code, model prompts, and design of this application are proprietary a
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED.
 
-For inquiries, contact: ziche.zhao@un.org
+For inquiries, contact: zichen.zhao@un.org or zichen.zhao@columbia.edu
